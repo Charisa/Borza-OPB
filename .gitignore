@@ -1,0 +1,14 @@
+*~
+__pycache__
+*.aux
+*.log
+*.out
+*.pyc
+.DS_Store
+.Rhistory
+.Rproj.user
+.Rproj
+.RData
+auth.py
+auth.R
+Thumbs.db
