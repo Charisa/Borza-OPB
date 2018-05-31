@@ -52,7 +52,7 @@ createTables <- function(users = c("sarak, kajav, andrazp")){
     # PostgreSQL ver. 9.1 and over)
     # user is a reserved name, therefore we user userAccount
     dbSendQuery(conn, build_sql("CREATE TABLE IF NOT EXISTS userAccount (
-                                userID INTEGER PRIMARY KEY,
+                                userID SERIAL PRIMARY KEY,
                                 name TEXT,
                                 surname TEXT,
                                 address TEXT,

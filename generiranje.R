@@ -1,4 +1,4 @@
-install.packages('dplyr')
+library('dplyr')
 
 df <- read.csv2("podatki.csv", header = TRUE, blank.lines.skip = TRUE,na.strings = "")
 df <- subset(df, select = c(1,2,3,4))
