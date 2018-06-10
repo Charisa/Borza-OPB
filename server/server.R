@@ -1,4 +1,3 @@
-library(shinydashboard)
 library(dbplyr)
 #source("auth.R")
 
@@ -30,11 +29,28 @@ shinyServer(function(input, output){
   output$signUpBOOL <- eventReactive(input$signup_btn, 1) # Gumb, ce se hoce uporabnik registrirat
   outputOptions(output, 'signUpBOOL', suspendWhenHidden=FALSE)  # Da omogoca skrivanje/odkrivanje
   
-  # test <- validate(need(sign.up.user(input$nameSignUp, 
-  #                                    input$surnameSignUp, 
-  #                                    input$addressSignUp, 
-  #                                   input$citySignUp, input$countrySignUp, input$emsoSignUp,
-  #                                   input$mailSignUp, input$userNameSignUp, input$passwordSignUp)==(-1),"error"))
+  # test <- validate(need(sign.up.user(input$SignUpName, 
+  #                                    input$SignUpSurname, 
+  #                                    input$SignUpAddress, 
+  #                                   input$SignUpCity, input$SignUpCountry, input$SignUpEmso,
+  #                                   input$SignUpMail, input$SignUpUserName, input$SignUpPassword)==(-1),"error"))
+  
+  # Greyout of signin button
+  observeEvent(c(input$userName,input$password), {
+    shinyjs::toggleState("signin_btn", 
+                         all(c(input$userName, input$password)!=""))
+  })
+  
+  # Greyout of signup button
+  observeEvent(c(input$SignUpName, input$SignUpSurname, input$SignUpAddress, input$SignUpCity,
+                  input$SignUpCountry, input$SignUpEmso, input$SignUpMail, 
+                 input$SignUpUserName, input$SignUpPassword), {
+                   shinyjs::toggleState("signup_btnSignUp",
+                                        all(c(input$SignUpName, input$SignUpSurname, input$SignUpAddress, input$SignUpCity,
+                                              input$SignUpCountry, input$SignUpEmso, input$SignUpMail, 
+                                              input$SignUpUserName, input$SignUpPassword)!=""))
+                 })
+  
   
   test <-  observeEvent(input$signup_btnSignUp,
                    sign.up.user(input$nameSignUp, input$surnameSignUp, input$addressSignUp, 

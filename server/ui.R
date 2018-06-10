@@ -1,42 +1,91 @@
+library(shiny)
 library(shinydashboard)
+library(shinyjs)
+
+
+# TODO Dodaj css/html za oblikovanje
+
+vpisniPanel <- tabPanel("SignIn", value="signIn",
+                         fluidPage(
+                           fluidRow(
+                             column(width = 12,
+                                    align = "center",
+                                    #conditionalPanel(condition = "output.signUpBOOL!='1'", verbatimTextOutput("signUpBOOL")),  # ker shiny cudn
+                                    textInput("userName","User name", value= ""),
+                                    passwordInput("password","Password", value = ""),
+                                    actionButton("signin_btn", "Sign In"),
+                                    actionButton("signup_btn", "Sign Up"))
+                             # tags$style(type="text/css", "#string { padding: 2000px 0;}")
+                         )))
+
+registracijaPanel <- tabPanel("SignUp", value = "signUp",
+                              fluidPage(
+                                fluidRow(
+                                  column(width = 12,
+                                         align="center",
+                                         textInput("SignUpName","Name", value= ""),
+                                         textInput("SignUpSurname","Surname", value= ""),
+                                         textInput("SignUpAddress","Address", value= ""),
+                                         textInput("SignUpCity","City", value= ""),
+                                         textInput("SignUpCountry","Country", value= ""),
+                                         textInput("SignUpEmso","Social ID", value= ""),
+                                         textInput("SignUpMail","eMail", value= ""),
+                                         textInput("SignUpUserName","Username", value= ""),
+                                         passwordInput("SignUpPassword","Password", value= ""),
+                                         actionButton("signup_btnSignUp", "Sign Up")
+                                  )
+                                )
+                              )
+                            )
+
+# Oblika v aplikaciji
+
 
 sidebar <- dashboardSidebar(hr(),
-  sidebarMenu(id="tabs",
-              menuItem("User", tabName = "user", icon=icon("line-chart"), selected = TRUE)),
-  conditionalPanel(condition = "output.signUpBOOL!='1'",sidebarMenu(id="test",
-              menuItem("tst2",tabName = "Test")))
+  sidebarMenu(id="exchangeId",
+              menuItem("Exchange", tabName = "exchange", icon=icon("line-chart"), selected = TRUE)),
+  sidebarMenu(id="walletId",
+              menuItem("Wallet",tabName = "wallet", icon=icon("usd")))
 )
 
 body <- dashboardBody(
   tabItems(
-    tabItem(tabName = "user",
+    # Okno z orderbookom in narocili
+    tabItem(tabName = "exchange",
             fluidRow(
-              column(width = 10,
-                     #conditionalPanel(condition = "output.signUpBOOL!='1'", verbatimTextOutput("signUpBOOL")),  # ker shiny cudn
-                     conditionalPanel(condition = "output.signUpBOOL!='1'",
-                        textInput("userName","User name", value= ""),
-                        textInput("password","Password", value = ""),
-                        actionButton("signin_btn", "Sign In"),actionButton("signup_btn", "Sign Up"))),
+              # Input za buy/sell orderje
+              column(width=6,
+                     selectInput("exchangeCats", label = "Cat", selected = 1, 
+                                 choices = c("Chartreoux", "British Shorthair")),
               
-              column(width = 12,
-                     conditionalPanel(condition = "output.signUpBOOL=='1'",
-                     textInput("nameSignUp","Name", value= ""),
-                     textInput("surnameSignUp","Surname", value= ""),
-                     textInput("addressSignUp","Address", value= ""),
-                     textInput("citySignUp","City", value= ""),
-                     textInput("countrySignUp","Country", value= ""),
-                     textInput("emsoSignUp","Social ID", value= ""),
-                     textInput("mailSignUp","eMail", value= ""),
-                     textInput("userNameSignUp","Username", value= ""),
-                     passwordInput("passwordSignUp","Password", value= ""),
-                     actionButton("signup_btnSignUp", "Sign Up")
-                     ))       
+                     tabBox(id = "exchangeAction", title = "Trading box", width=12,
+                            tabPanel("Buy",
+                                     numericInput("exchangeBuyPriceInput", label="Price",
+                                                  min = 0, value = 0),   #TODO
+                                     numericInput("exchangeBuyQuantityInput", label="Quantity",
+                                                  min = 0, value = 0) 
+                                     ),
+                            tabPanel("Sell",
+                                     numericInput("exchangeSellPriceInput", label="Price",
+                                                  min = 0, value = 0),   #TODO
+                                     numericInput("exchangeSellQuantityInput", label="Quantity",
+                                                  min = 0, value = 0) )
+                
+              ))
+            )),
+    # Denarnica
+    tabItem(tabName = "wallet",
+            fluidRow(
+              
             ))
   )
 )
-
-dashboardPage(
-  dashboardHeader(title = "Borza mack"),
-  sidebar,
-  body
+fluidPage(useShinyjs(),
+  conditionalPanel(condition = "output.signUpBOOL=='1'", vpisniPanel),       # UI panel za vpis
+  conditionalPanel(condition = "output.signUpBOOL=='1'", registracijaPanel),  # UI panel registracija
+  conditionalPanel(condition = "output.signUpBOOL!='1'",    # Panel, ko si ze vpisan
+                   dashboardPage(dashboardHeader(title = "Borza mack"),
+                                 sidebar,
+                                 body)),
+  theme="bootstrap.css"
 )
