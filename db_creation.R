@@ -60,7 +60,7 @@ createTables <- function(users = c("sarak, kajav, andrazp")){
                                 country TEXT,
                                 EMSO TEXT,
                                 mail TEXT,
-                                username TEXT,
+                                username TEXT UNIQUE,
                                 password TEXT);"
                                 ))
     
