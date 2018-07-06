@@ -1,24 +1,59 @@
 library(dbplyr)
 #source("auth.R")
 
+# TODO password hashing
+
 drv <- dbDriver("PostgreSQL")
 source("../auth.R")
 sign.up.user <- function(name, surname, address, city, country, emso, mail, username, pass){
-  input <- c(name, surname, address, city, country, emso, mail, username, password)
-  if(!all(input!="")){
-    return(-1)  # If any value is missing
-  }
-  useraccount <- data.frame(name, surname, address, city, country, emso, mail, username, password=pass)
+  # Return values:
+  # 1 ... success
+  # 0 ... error
+  # -10 ... username exists
+  
   success <- 0      # Boolean, if the insertion into the db was successful
+  
+  useraccount <- data.frame(name, surname, address, city, country, emso, mail, username, password=pass)
   tryCatch({
     conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
+    userTable <- tbl(conn, "useraccount")
+    # Checks if username is already in the database
+    if(0 != dim((userTable %>% filter(username == username) %>% collect()))[1]){
+      success <- -10
+    }
     dbWriteTable(conn,name="useraccount", useraccount, append=TRUE, row.names = FALSE)
-    success <- success + 1
+    success <- 1
   
   }, finally = {
     dbDisconnect(conn)
-    print(success)
     return(success)
+  })
+}
+
+sign.in.user <- function(username, pass){
+  # Return a list. In the first place is an indicator of success:
+  # 1 ... success
+  # 0 ... error
+  # -10 ... wrong username
+  # The second place represents the userid if the login info is correct,
+  # otherwise it's NULL
+  success <- 0
+  uporabnikID <- NULL
+  tryCatch({
+    conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
+    userTable <- tbl(conn, "useraccount")
+    # obstoj = 0, ce username in geslo ne obstajata,  1 ce obstaja
+    obstoj <- dim((userTable %>% filter(username == username, password == pass) %>% collect()))[1]
+    if(obstoj == 0){
+      success <- -10
+    }else{
+        uporabnikID <- (test %>% filter(username == username, password == pass) %>%
+                        select(userid) %>% collect())[[1]]
+        success <- 1
+    }
+  }, finally = {
+    dbDisconnect(conn)
+    return(list(success, uporabnikID))
   })
 }
 
@@ -26,15 +61,11 @@ sign.up.user <- function(name, surname, address, city, country, emso, mail, user
 #conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
 #dbDisconnect(conn)
 shinyServer(function(input, output){
+  source("../auth.R")
+  
   output$signUpBOOL <- eventReactive(input$signup_btn, 1) # Gumb, ce se hoce uporabnik registrirat
   outputOptions(output, 'signUpBOOL', suspendWhenHidden=FALSE)  # Da omogoca skrivanje/odkrivanje
-  
-  # test <- validate(need(sign.up.user(input$SignUpName, 
-  #                                    input$SignUpSurname, 
-  #                                    input$SignUpAddress, 
-  #                                   input$SignUpCity, input$SignUpCountry, input$SignUpEmso,
-  #                                   input$SignUpMail, input$SignUpUserName, input$SignUpPassword)==(-1),"error"))
-  
+
   # Greyout of signin button
   observeEvent(c(input$userName,input$password), {
     shinyjs::toggleState("signin_btn", 
@@ -51,14 +82,66 @@ shinyServer(function(input, output){
                                               input$SignUpUserName, input$SignUpPassword)!=""))
                  })
   
+  # Sign up protocol
+  observeEvent(input$signup_btnSignUp,
+               {
+                 success <- sign.up.user(input$SignUpName, input$SignUpSurname, input$SignUpAddress, 
+                             input$SignUpCity, input$SignUpCountry, input$SignUpEmso,
+                             input$SignUpMail, input$SignUpUserName, input$SignUpPassword)
+                if(success==1){
+                  showModal(modalDialog(
+                    title = "You have successfully signed up!",
+                    paste0("Now you can login as ",input$SignUpUserName,''),
+                    easyClose = TRUE,
+                    footer = NULL
+                  ))
+                  output$signUpBOOL <- eventReactive(input$signup_btnSignUp, 0) 
+                }else if(success==-10){
+                  showModal(modalDialog(
+                    title = "Username conflict!",
+                    paste0("The username ",input$SignUpUserName,' is already taken. Please,
+                           chose a new one.'),
+                    easyClose = TRUE,
+                    footer = NULL
+                  ))
+                }else{
+                 showModal(modalDialog(
+                   title = "Error during sign up",
+                   paste0("An error seems to have occured. Please try again."),
+                   easyClose = TRUE,
+                   footer = NULL
+                 ))
+                }
+               })
   
-  test <-  observeEvent(input$signup_btnSignUp,
-                   sign.up.user(input$nameSignUp, input$surnameSignUp, input$addressSignUp, 
-                                input$citySignUp, input$countrySignUp, input$emsoSignUp,
-                                input$mailSignUp, input$userNameSignUp, input$passwordSignUp))
+  # Sign in protocol
+  observeEvent(input$signin_btn,
+               {signInReturn <- sign.in.user(input$userName, input$password)
+               if(signInReturn[[1]]==1){
+                 userID <- signInReturn[[2]]
+                 output$signUpBOOL <- eventReactive(input$signin_btn, 2)
+               }else if(signInReturn[[1]]==0){
+                 showModal(modalDialog(
+                   title = "Error during sign in",
+                   paste0("An error seems to have occured. Please try again."),
+                   easyClose = TRUE,
+                   footer = NULL
+                 ))
+               }else{
+                 showModal(modalDialog(
+                   title = "Wrong Username/Password",
+                   paste0("Username or/and password incorrect"),
+                   easyClose = TRUE,
+                   footer = NULL
+                 ))
+               }
+               })
+  # Back button to sign in page
+  observeEvent(input$signup_btnBack, output$signUpBOOL <- eventReactive(input$signup_btnBack, 0))
+  
 
 }
 )
 
-#sign.up.user("name", "surname", "addres", "city", "country", "emso", "mail", "username","password")
+#sign.up.user("name", "surname", "addres", "city", "country", "emso", "mail", "username6","password")
 

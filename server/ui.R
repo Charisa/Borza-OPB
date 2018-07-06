@@ -32,6 +32,7 @@ registracijaPanel <- tabPanel("SignUp", value = "signUp",
                                          textInput("SignUpMail","eMail", value= ""),
                                          textInput("SignUpUserName","Username", value= ""),
                                          passwordInput("SignUpPassword","Password", value= ""),
+                                         actionButton("signup_btnBack", "Back"),
                                          actionButton("signup_btnSignUp", "Sign Up")
                                   )
                                 )
@@ -81,9 +82,10 @@ body <- dashboardBody(
   )
 )
 fluidPage(useShinyjs(),
-  conditionalPanel(condition = "output.signUpBOOL=='1'", vpisniPanel),       # UI panel za vpis
+  conditionalPanel(condition = "output.signUpBOOL!='1' && output.signUpBOOL!='2'", 
+                   vpisniPanel),       # UI panel za vpis
   conditionalPanel(condition = "output.signUpBOOL=='1'", registracijaPanel),  # UI panel registracija
-  conditionalPanel(condition = "output.signUpBOOL!='1'",    # Panel, ko si ze vpisan
+  conditionalPanel(condition = "output.signUpBOOL=='2'",    # Panel, ko si ze vpisan
                    dashboardPage(dashboardHeader(title = "Borza mack"),
                                  sidebar,
                                  body)),
