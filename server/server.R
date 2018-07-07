@@ -3,18 +3,17 @@ library(dbplyr)
 
 # TODO password hashing
 
-drv <- dbDriver("PostgreSQL")
 source("../auth.R")
 sign.up.user <- function(name, surname, address, city, country, emso, mail, username, pass){
   # Return values:
   # 1 ... success
   # 0 ... error
   # -10 ... username exists
-  
   success <- 0      # Boolean, if the insertion into the db was successful
   
   useraccount <- data.frame(name, surname, address, city, country, emso, mail, username, password=pass)
   tryCatch({
+    drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
     userTable <- tbl(conn, "useraccount")
     # Checks if username is already in the database
@@ -40,6 +39,7 @@ sign.in.user <- function(username, pass){
   success <- 0
   uporabnikID <- NULL
   tryCatch({
+    drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
     userTable <- tbl(conn, "useraccount")
     # obstoj = 0, ce username in geslo ne obstajata,  1 ce obstaja
@@ -47,10 +47,14 @@ sign.in.user <- function(username, pass){
     if(obstoj == 0){
       success <- -10
     }else{
-        uporabnikID <- (test %>% filter(username == username, password == pass) %>%
+        uporabnikID <- (userTable %>% filter(username == username, password == pass) %>%
                         select(userid) %>% collect())[[1]]
         success <- 1
     }
+  },warning = function(w){
+    print(w)
+  },error = function(e){
+    print(e)
   }, finally = {
     dbDisconnect(conn)
     return(list(success, uporabnikID))
@@ -62,6 +66,11 @@ sign.in.user <- function(username, pass){
 #dbDisconnect(conn)
 shinyServer(function(input, output){
   source("../auth.R")
+  library(dplyr)
+  library(dbplyr)
+  library(DBI)
+  library(RPostgreSQL)
+  drv <- dbDriver("PostgreSQL")
   
   output$signUpBOOL <- eventReactive(input$signup_btn, 1) # Gumb, ce se hoce uporabnik registrirat
   outputOptions(output, 'signUpBOOL', suspendWhenHidden=FALSE)  # Da omogoca skrivanje/odkrivanje
