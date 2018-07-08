@@ -69,8 +69,7 @@ createTables <- function(users = c("sarak, kajav, andrazp, javnost")){
                                 balance FLOAT,
                                 type TEXT,
                                 time TIMESTAMP WITH TIME ZONE DEFAULT current_timestamp);"
-      
-    ))
+                                ))
     
     dbSendQuery(conn, build_sql("CREATE TABLE IF NOT EXISTS cat (
                                 catID INTEGER PRIMARY KEY,
