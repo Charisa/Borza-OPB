@@ -56,21 +56,26 @@ body <- dashboardBody(
             fluidRow(
               # Input za buy/sell orderje
               column(width=6,
-                     selectInput("exchangeCats", label = "Cat", selected = 1, 
-                                 choices = c("Chartreoux", "British Shorthair")),
+                     uiOutput("mackeSeznam"),
+                     #selectInput("exchangeCats", label = "Cat", selected = 1, 
+                                 #choices = macke()),
+                      #           choices = c("Chartreoux", "British Shorthair")),
               
                      tabBox(id = "exchangeAction", title = "Trading box", width=12,
                             tabPanel("Buy",
                                      numericInput("exchangeBuyPriceInput", label="Price",
                                                   min = 0, value = 0),   #TODO
                                      numericInput("exchangeBuyQuantityInput", label="Quantity",
-                                                  min = 0, value = 0) 
+                                                  min = 0, value = 0), 
+                                     actionButton("execute_btnBuy", "Execute Order")
                                      ),
                             tabPanel("Sell",
                                      numericInput("exchangeSellPriceInput", label="Price",
                                                   min = 0, value = 0),   #TODO
                                      numericInput("exchangeSellQuantityInput", label="Quantity",
-                                                  min = 0, value = 0) )
+                                                  min = 0, value = 0),
+                                     actionButton("execute_btnSell", "Execute Order")
+                                     )
                 
               ))
             )),
@@ -82,10 +87,10 @@ body <- dashboardBody(
   )
 )
 fluidPage(useShinyjs(),
-  conditionalPanel(condition = "output.signUpBOOL!='1' && output.signUpBOOL!='2'", 
+  conditionalPanel(condition = "output.signUpBOOL!='1' && output.signUpBOOL!='2' && false", 
                    vpisniPanel),       # UI panel za vpis
   conditionalPanel(condition = "output.signUpBOOL=='1'", registracijaPanel),  # UI panel registracija
-  conditionalPanel(condition = "output.signUpBOOL=='2'",    # Panel, ko si ze vpisan
+  conditionalPanel(condition = "true",#"output.signUpBOOL=='2'",    # Panel, ko si ze vpisan
                    dashboardPage(dashboardHeader(title = "Borza mack"),
                                  sidebar,
                                  body)),

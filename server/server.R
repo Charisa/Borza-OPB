@@ -1,8 +1,6 @@
 library(dbplyr)
 #source("auth.R")
 
-# TODO password hashing
-
 source("../auth.R")
 sign.up.user <- function(name, surname, address, city, country, emso, mail, username, pass){
   # Return values:
@@ -61,6 +59,37 @@ sign.in.user <- function(username, pass){
   })
 }
 
+pridobi.imena.mack <- function(){
+  # Pridobi imena mack iz baze in jih vrne
+  tryCatch({
+    drv <- dbDriver("PostgreSQL")
+    conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
+    sqlInput<- paste("SELECT DISTINCT breed FROM cat")
+    
+    macke <- dbGetQuery(conn, sqlInput)
+  },finally = {
+    dbDisconnect(conn)
+    return(unname(unlist(macke)))
+  }
+  )
+}
+
+execute.buy.order <- function(cat, price, quantity, userID){
+  tryCatch({
+      drv <- dbDriver("PostgreSQL")
+      conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
+      userTable <- tbl(conn, "useraccount")
+      #TODO
+    },warning = function(w){
+      print(w)
+    },error = function(e){
+      print(e)
+    }, finally = {
+      dbDisconnect(conn)
+      #TODO
+  })
+}
+  
 #drv <- dbDriver("PostgreSQL")
 #conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
 #dbDisconnect(conn)
@@ -80,6 +109,29 @@ shinyServer(function(input, output){
     shinyjs::toggleState("signin_btn", 
                          all(c(input$userName, input$password)!=""))
   })
+  
+  # Sign in protocol
+  observeEvent(input$signin_btn,
+               {signInReturn <- sign.in.user(input$userName, input$password)
+               if(signInReturn[[1]]==1){
+                 userID <- signInReturn[[2]]
+                 output$signUpBOOL <- eventReactive(input$signin_btn, 2)
+               }else if(signInReturn[[1]]==0){
+                 showModal(modalDialog(
+                   title = "Error during sign in",
+                   paste0("An error seems to have occured. Please try again."),
+                   easyClose = TRUE,
+                   footer = NULL
+                 ))
+               }else{
+                 showModal(modalDialog(
+                   title = "Wrong Username/Password",
+                   paste0("Username or/and password incorrect"),
+                   easyClose = TRUE,
+                   footer = NULL
+                 ))
+               }
+               })
   
   # Greyout of signup button
   observeEvent(c(input$SignUpName, input$SignUpSurname, input$SignUpAddress, input$SignUpCity,
@@ -123,32 +175,20 @@ shinyServer(function(input, output){
                 }
                })
   
-  # Sign in protocol
-  observeEvent(input$signin_btn,
-               {signInReturn <- sign.in.user(input$userName, input$password)
-               if(signInReturn[[1]]==1){
-                 userID <- signInReturn[[2]]
-                 output$signUpBOOL <- eventReactive(input$signin_btn, 2)
-               }else if(signInReturn[[1]]==0){
-                 showModal(modalDialog(
-                   title = "Error during sign in",
-                   paste0("An error seems to have occured. Please try again."),
-                   easyClose = TRUE,
-                   footer = NULL
-                 ))
-               }else{
-                 showModal(modalDialog(
-                   title = "Wrong Username/Password",
-                   paste0("Username or/and password incorrect"),
-                   easyClose = TRUE,
-                   footer = NULL
-                 ))
-               }
-               })
   # Back button to sign in page
   observeEvent(input$signup_btnBack, output$signUpBOOL <- eventReactive(input$signup_btnBack, 0))
   
-
+  # Seznam razpolozljivih mack, pridobljen iz baze
+  macke <- reactive({
+    pridobi.imena.mack()
+  })  
+  output$mackeSeznam <- renderUI({
+    # To omogoci, da se ta select prikaze na ui, s tem, da so podatki iz baze
+    selectInput("exchangeCat",
+                label ="Cat",
+                choices=macke(),
+                selected = 2, multiple = FALSE)
+  })
 }
 )
 
