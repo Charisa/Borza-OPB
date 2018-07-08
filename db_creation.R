@@ -37,7 +37,7 @@ grantPublic <- function(name = "javnost", conn){
   dbSendQuery(conn, build_sql("GRANT CONNECT ON DATABASE sem2018_andrazp TO ", sql(name), ";"))
   dbSendQuery(conn, build_sql("GRANT SELECT ON ALL TABLES IN SCHEMA public TO ", sql(name), ";"))
 }
-createTables <- function(users = c("sarak, kajav, andrazp")){
+createTables <- function(users = c("sarak, kajav, andrazp, javnost")){
   # This function creates the base tables needed the application
   # It requires the following global variables: drv, dbname, host, user, password
   tryCatch({
@@ -64,29 +64,37 @@ createTables <- function(users = c("sarak, kajav, andrazp")){
                                 password TEXT);"
                                 ))
     
+    dbSendQuery(conn, build_sql("CREATE TABLE IF NOT EXISTS wallet (
+                                userID INTEGER,
+                                balance FLOAT,
+                                type TEXT,
+                                time TIMESTAMP WITH TIME ZONE DEFAULT current_timestamp);"
+      
+    ))
+    
     dbSendQuery(conn, build_sql("CREATE TABLE IF NOT EXISTS cat (
                                 catID INTEGER PRIMARY KEY,
-                                breed TEXT);"
+                                breed TEXT UNIQUE);"
                                 ))
     
     dbSendQuery(conn, build_sql("CREATE TABLE IF NOT EXISTS transaction (
-                                transactionID INTEGER PRIMARY KEY,
+                                transactionID SERIAL PRIMARY KEY,
                                 userID INTEGER REFERENCES userAccount (userID),
                                 orderType TEXT,
                                 price FLOAT,
                                 quantity INTEGER,
                                 catID INTEGER REFERENCES cat (catID),
-                                time DATE);"
+                                time TIMESTAMP WITH TIME ZONE DEFAULT current_timestamp);"
                                 ))
     
     dbSendQuery(conn, build_sql("CREATE TABLE IF NOT EXISTS orderbook (
-                                orderID INTEGER PRIMARY KEY,
+                                orderID SERIAL PRIMARY KEY,
                                 userID INTEGER REFERENCES userAccount (userID),
                                 orderType TEXT,
                                 price FLOAT,
                                 quantity INTEGER,
                                 catID INTEGER REFERENCES cat (catID),
-                                time DATE,
+                                time TIMESTAMP WITH TIME ZONE DEFAULT current_timestamp,
                                 status TEXT)"
                                 ))
     
@@ -98,7 +106,7 @@ createTables <- function(users = c("sarak, kajav, andrazp")){
   })
 }
 
-deleteTables(c("userAccount", "cat", "transaction","orderbook"))
+deleteTables(c("userAccount", "cat", "transaction","orderbook", "wallet"))
 createTables()
 
 
