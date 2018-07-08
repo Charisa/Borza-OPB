@@ -101,11 +101,4 @@ shinyServer(function(input, output){
 }
 )
 
-# sign.up.user("name", "surname", "addres", "city", "country", "emso", "mail", "username1","password")
-# sign.up.user("name", "surname", "addres", "city", "country", "emso", "mail", "username2","password")
-# sign.up.user("name", "surname", "addres", "city", "country", "emso", "mail", "username3","password")
-# sign.up.user("name", "surname", "addres", "city", "country", "emso", "mail", "username4","password")
-# sign.up.user("name", "surname", "addres", "city", "country", "emso", "mail", "username5","password")
-# sign.up.user("name", "surname", "addres", "city", "country", "emso", "mail", "username6","password")
-# sign.up.user("name", "surname", "addres", "city", "country", "emso", "mail", "username7","password")
 
