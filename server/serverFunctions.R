@@ -91,17 +91,16 @@ check.wallet.balance <- function(userID){
   tryCatch({
     drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
-    # sqlInput<- build_sql("SELECT balance, type
-    #                      FROM wallet WHERE userid = ", userID,";")
-    # wallet <- dbGetQuery(conn, sqlInput)
-    wallet <- tbl(conn, "wallet")
+    sqlInput <- build_sql("SELECT SUM(CASE WHEN (type = 'deposit' or type = 'sold') THEN 1 ELSE -1 END * balance) AS balance 
+                                    FROM wallet WHERE userid = ", userID,";")
+    balance <- dbGetQuery(conn, sqlInput)
   },warning = function(w){
     print(w)
   },error = function(e){
     print(e)
   }, finally = {
     dbDisconnect(conn)
-    #TODO
+    return(balance)
   })
 }
 
