@@ -86,3 +86,24 @@ execute.buy.order <- function(cat, price, quantity, userID){
     #TODO
   })
 }
+
+check.wallet.balance <- function(userID){
+  tryCatch({
+    drv <- dbDriver("PostgreSQL")
+    conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
+    # sqlInput<- build_sql("SELECT balance, type
+    #                      FROM wallet WHERE userid = ", userID,";")
+    # wallet <- dbGetQuery(conn, sqlInput)
+    wallet <- tbl(conn, "wallet")
+  },warning = function(w){
+    print(w)
+  },error = function(e){
+    print(e)
+  }, finally = {
+    dbDisconnect(conn)
+    #TODO
+  })
+}
+
+
+

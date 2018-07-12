@@ -70,6 +70,7 @@ createTables <- function(users = c("sarak, kajav, andrazp, javnost")){
                                 type TEXT,
                                 time TIMESTAMP WITH TIME ZONE DEFAULT current_timestamp);"
                                 ))
+    # type: deposit, withdrawal, bought, sold
     
     dbSendQuery(conn, build_sql("CREATE TABLE IF NOT EXISTS cat (
                                 catID INTEGER PRIMARY KEY,
