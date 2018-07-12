@@ -108,7 +108,7 @@ shinyServer(function(input, output){
   #})
   
   # Stanje v denarnici
-  output$walletStatusFiat <- renderText({"10"})
+  output$walletStatusFiat <- renderText(as.character(check.wallet.balance(userID)))
   
   # Deposit/Withdrawal funkcije
   

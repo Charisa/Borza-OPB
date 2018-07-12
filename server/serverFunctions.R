@@ -100,7 +100,7 @@ check.wallet.balance <- function(userID){
     print(e)
   }, finally = {
     dbDisconnect(conn)
-    return(balance)
+    return(balance[[1]])
   })
 }
 
