@@ -57,16 +57,12 @@ body <- dashboardBody(
               # Input za buy/sell orderje
               column(width=6,
                      uiOutput("mackeSeznam"),
-                     #selectInput("exchangeCats", label = "Cat", selected = 1, 
-                                 #choices = macke()),
-                      #           choices = c("Chartreoux", "British Shorthair")),
-              
                      tabBox(id = "exchangeAction", title = "Trading box", width=12,
                             tabPanel("Buy",
                                      numericInput("exchangeBuyPriceInput", label="Price",
                                                   min = 0, value = 0),   #TODO
                                      numericInput("exchangeBuyQuantityInput", label="Quantity",
-                                                  min = 0, value = 0), 
+                                                  min = 0, value = 0, step = 1), 
                                      actionButton("execute_btnBuy", "Execute Order")
                                      ),
                             tabPanel("Sell",
@@ -82,7 +78,20 @@ body <- dashboardBody(
     # Denarnica
     tabItem(tabName = "wallet",
             fluidRow(
-              
+              # Stanje denarnice in moznost nalaganja novih sredstev
+              column(width = 8,
+                     tabBox(id = "walletStatus", title = "Walet status", width = 12,
+                            tabPanel("Funds",
+                                     verbatimTextOutput("walletStatusFiat"),
+                                     actionButton("execute_btnWithdrawal", "Withdraw"),
+                                     bsModal("walletWithdrawModal", "Withdrawal of funds",
+                                             "execute_btnWithdrawal", size = "small"),
+                                     actionButton("execute_btnDeposit", "Deposit")
+                                     )
+
+                     )
+
+              )
             ))
   )
 )

@@ -32,3 +32,8 @@ addUsers <- function(number = 8){
          )
 }
 addUsers()
+
+
+df <- data.frame(userid=c(1,1,2,4,5,3), balance=c(100,50,1000,3,1,890), 
+                 type=c("deposit", "withdrawal", "deposit","deposit", "deposit", "deposit"))
+dbWriteTable(conn, name="wallet", df,append=TRUE, row.names=FALSE)

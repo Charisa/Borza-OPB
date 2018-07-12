@@ -4,6 +4,8 @@
 shinyServer(function(input, output){
   source("../auth.R")
   source("serverFunctions.R")
+  library(shiny)
+  library(shinyBS)
   library(dplyr)
   library(dbplyr)
   library(DBI)
@@ -98,6 +100,18 @@ shinyServer(function(input, output){
                 choices=macke(),
                 selected = 2, multiple = FALSE)
   })
+  
+  #numbers <- reactive({
+   # validate(
+    #  need(is.integer(input$exchangeBuyQuantityInput), "The quantity needs to be an integer!")
+    #)
+  #})
+  
+  # Stanje v denarnici
+  output$walletStatusFiat <- renderText({"10"})
+  
+  # Deposit/Withdrawal funkcije
+  
 }
 )
 
