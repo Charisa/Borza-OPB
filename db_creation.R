@@ -95,7 +95,7 @@ createTables <- function(users = c("sarak, kajav, andrazp, javnost")){
                                 quantity INTEGER,
                                 catID INTEGER REFERENCES cat (catID),
                                 time TIMESTAMP WITH TIME ZONE DEFAULT current_timestamp,
-                                status TEXT)"
+                                current INTEGER)"
                                 ))
     
     lapply(users, grant, conn)
