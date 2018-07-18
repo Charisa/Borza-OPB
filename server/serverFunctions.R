@@ -105,4 +105,33 @@ check.wallet.balance <- function(userID){
 }
 
 
+user.change.balance <- function(userID, quantity, type){
+  tryCatch({
+    drv <- dbDriver("PostgreSQL")
+    conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
+    status <- FALSE
+    if ((type == "withdraw" | type ==  "bought") & check.wallet.balance(userID) < quantity){
+      status <- FALSE
+    } else {
+      sqlInput <- build_sql("INSERT INTO wallet VALUES (", userID, ",", quantity, ",", type, ");")
+      dbGetQuery(conn, sqlInput)
+      status <- TRUE
+    }
+  },warning = function(w){
+    print(w)
+    status <- "napaka"
+  },error = function(e){
+    print(e)
+    status <- "napaka"
+  }, finally = {
+    dbDisconnect(conn)
+    return(status)
+  })
+}
+
+
+
+
+
+
 
