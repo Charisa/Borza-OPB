@@ -109,9 +109,13 @@ shinyServer(function(input, output){
   
   # Stanje v denarnici
   output$walletStatusFiat <- renderText(as.character(check.wallet.balance(userID)))
+  output$walletStatusFiatModal1 <- renderText(as.character(check.wallet.balance(userID)))
+  output$walletStatusFiatModal2 <- renderText(as.character(check.wallet.balance(userID)))
   
   # Deposit/Withdrawal funkcije
-  
+  observeEvent(input$execute_btnWithdrawalModal,{
+    
+  })
 }
 )
 

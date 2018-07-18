@@ -80,13 +80,28 @@ body <- dashboardBody(
             fluidRow(
               # Stanje denarnice in moznost nalaganja novih sredstev
               column(width = 8,
-                     tabBox(id = "walletStatus", title = "Walet status", width = 12,
+                     tabBox(id = "walletStatus", title = "Wallet status", width = 12,
                             tabPanel("Funds",
                                      verbatimTextOutput("walletStatusFiat"),
                                      actionButton("execute_btnWithdrawal", "Withdraw"),
+                                     # Popup za withdrawal
                                      bsModal("walletWithdrawModal", "Withdrawal of funds",
-                                             "execute_btnWithdrawal", size = "small"),
-                                     actionButton("execute_btnDeposit", "Deposit")
+                                             "execute_btnWithdrawal", size = "small",
+                                              verbatimTextOutput("walletStatusFiatModal1"),
+                                              numericInput("walletWithdrawalInput", label = "Amount",
+                                                           min = 0, value = 0,
+                                                           max = check.wallet.balance(userID)), 
+                                              actionButton("execute_btnWithdrawalModal", "Withdraw")
+                                             ),
+                                     actionButton("execute_btnDeposit", "Deposit"),
+                                     # Popup za deposit
+                                     bsModal("walletDepositModal", "Deposit of funds",
+                                             "execute_btnDeposit", size = "small",
+                                             verbatimTextOutput("walletStatusFiatModal2"),
+                                             numericInput("walletDepositInput", label = "Amount",
+                                                          min = 0, value = 0), 
+                                             actionButton("execute_btnDepositModal", "Deposit")
+                                     )
                                      )
 
                      )
@@ -99,6 +114,7 @@ fluidPage(useShinyjs(),
   conditionalPanel(condition = "output.signUpBOOL!='1' && output.signUpBOOL!='2' && false", 
                    vpisniPanel),       # UI panel za vpis
   conditionalPanel(condition = "output.signUpBOOL=='1'", registracijaPanel),  # UI panel registracija
+  # TODO sprememba stanja ob spremembi na bazi oz na vsakih 10 sekund
   conditionalPanel(condition = "true",#"output.signUpBOOL=='2'",    # Panel, ko si ze vpisan
                    dashboardPage(dashboardHeader(title = "Borza mack"),
                                  sidebar,

@@ -86,7 +86,7 @@ execute.buy.order <- function(cat, price, quantity, userID){
     #TODO
   })
 }
-
+ 
 check.wallet.balance <- function(userID){
   tryCatch({
     drv <- dbDriver("PostgreSQL")
