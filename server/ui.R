@@ -59,21 +59,23 @@ body <- dashboardBody(
                      uiOutput("mackeSeznam"),
                      tabBox(id = "exchangeAction", title = "Trading box", width=12,
                             tabPanel("Buy",
-                                     numericInput("exchangeBuyPriceInput", label="Price",
-                                                  min = 0, value = 0),   #TODO
                                      numericInput("exchangeBuyQuantityInput", label="Quantity",
                                                   min = 0, value = 0, step = 1), 
-                                     actionButton("execute_btnBuy", "Execute Order")
+                                     actionButton("execute_btnBuy", "Buy")
                                      ),
                             tabPanel("Sell",
                                      numericInput("exchangeSellPriceInput", label="Price",
-                                                  min = 0, value = 0),   #TODO
+                                                  min = 0, value = 0),
                                      numericInput("exchangeSellQuantityInput", label="Quantity",
                                                   min = 0, value = 0),
-                                     actionButton("execute_btnSell", "Execute Order")
+                                     actionButton("execute_btnSell", "Sell")
                                      )
                 
-              ))
+              )), column(width=6,
+                         # TODO
+                         #dataTableOutput("catPriceTable")
+                         uiOutput("mackeCene")
+                         )
             )),
     # Denarnica
     tabItem(tabName = "wallet",

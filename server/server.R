@@ -4,6 +4,7 @@
 shinyServer(function(input, output){
   source("../auth.R")
   source("serverFunctions.R")
+  source("serverFunctionsTemp.R")
   library(shiny)
   library(shinyBS)
   library(dplyr)
@@ -101,21 +102,89 @@ shinyServer(function(input, output){
                 selected = 2, multiple = FALSE)
   })
   
-  #numbers <- reactive({
-   # validate(
-    #  need(is.integer(input$exchangeBuyQuantityInput), "The quantity needs to be an integer!")
-    #)
-  #})
+  # Tabela cen za izbrano macko
+  selectedCat <- pridobi.imena.mack()[1]
+  observeEvent(input$exchangeCat, {
+    selectedCat <- input$exchangeCat
+    output$mackeCene <- renderUI({
+      output$tabelaCenMack <- renderDataTable({
+        pridobi.cene.macke(selectedCat)
+      })
+      dataTableOutput("tabelaCenMack")
+    })
+    })
   
   # Stanje v denarnici
-  output$walletStatusFiat <- renderText(as.character(check.wallet.balance(userID)))
-  output$walletStatusFiatModal1 <- renderText(as.character(check.wallet.balance(userID)))
-  output$walletStatusFiatModal2 <- renderText(as.character(check.wallet.balance(userID)))
+  updateWaletStatus <- function(){
+    walletStatusFiatDummy <- renderText(as.character(check.wallet.balance(userID)))
+    output$walletStatusFiat <<- walletStatusFiatDummy
+    output$walletStatusFiatModal1 <<- walletStatusFiatDummy
+    output$walletStatusFiatModal2 <<- walletStatusFiatDummy
+  }
+  
+  # Updajta vsebino na vsakih 10 sek
+  statusUpdateTimer <- reactiveTimer(10000)
+  observe({
+    statusUpdateTimer()
+    
+    updateWaletStatus()
+    selectedCat <- input$exchangeCat
+    output$mackeCene <- renderUI({
+      output$tabelaCenMack <- renderDataTable({
+        pridobi.cene.macke(selectedCat)
+      })
+      dataTableOutput("tabelaCenMack")
+    })
+  })
+  
   
   # Deposit/Withdrawal funkcije
   observeEvent(input$execute_btnWithdrawalModal,{
-    
+    status <- function()
+    if(status == TRUE){
+      showModal(modalDialog(
+        title = "Withdrawal successful",
+        paste0("Withdrawal was successful."),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }else if(status == FALSE){
+      showModal(modalDialog(
+        title = "Withdrawal unsuccessful",
+        paste0("Not enough funds"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }else{
+      showModal(modalDialog(
+        title = "Withdrawal unsuccessful",
+        paste0("An error has occurred. Please try again later."),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }
   })
+  
+  observeEvent(input$execute_btnDepositModal,{
+    status <- function()
+      if(status == TRUE){
+        showModal(modalDialog(
+          title = "Deposit successful",
+          paste0("Deposit was successful."),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      }else{
+        showModal(modalDialog(
+          title = "Deposit unsuccessful",
+          paste0("An error has occurred. Please try again later."),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      }
+  })
+  
+  
 }
 )
 
