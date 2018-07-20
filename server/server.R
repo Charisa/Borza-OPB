@@ -1,6 +1,7 @@
 #drv <- dbDriver("PostgreSQL")
 #conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
 #dbDisconnect(conn)
+
 shinyServer(function(input, output){
   source("../auth.R")
   source("serverFunctions.R")
@@ -12,6 +13,9 @@ shinyServer(function(input, output){
   library(DBI)
   library(RPostgreSQL)
   drv <- dbDriver("PostgreSQL")
+  
+  userID <- reactiveVal()    # Placeholder za userID
+  loggedIn <- reactiveVal(FALSE)    # Placeholder za logout gumb oz vrednost gumba
   
   output$signUpBOOL <- eventReactive(input$signup_btn, 1) # Gumb, ce se hoce uporabnik registrirat
   outputOptions(output, 'signUpBOOL', suspendWhenHidden=FALSE)  # Da omogoca skrivanje/odkrivanje
@@ -26,8 +30,9 @@ shinyServer(function(input, output){
   observeEvent(input$signin_btn,
                {signInReturn <- sign.in.user(input$userName, input$password)
                if(signInReturn[[1]]==1){
-                 userID <- signInReturn[[2]]
+                 userID(signInReturn[[2]])
                  output$signUpBOOL <- eventReactive(input$signin_btn, 2)
+                 loggedIn(TRUE)
                }else if(signInReturn[[1]]==0){
                  showModal(modalDialog(
                    title = "Error during sign in",
@@ -90,6 +95,27 @@ shinyServer(function(input, output){
   # Back button to sign in page
   observeEvent(input$signup_btnBack, output$signUpBOOL <- eventReactive(input$signup_btnBack, 0))
   
+  # Login/logout button in header
+  observeEvent(input$dashboardLogin, {
+    if(loggedIn()){
+      output$signUpBOOL <- eventReactive(input$signin_btn, 0)
+    }
+    loggedIn(ifelse(loggedIn(), FALSE, TRUE))
+  })
+  
+  output$logintext <- renderText({
+    if(loggedIn()) return("Logout here.")
+    return("Login here")
+  })
+  
+  output$dashboardLoggedUser <- renderText({
+    if(loggedIn()) return(paste("Welcome,", pridobi.ime.uporabnika(userID())))
+    return("")
+  })
+  
+  
+  # GLAVNA STRAN
+  
   # Seznam razpolozljivih mack, pridobljen iz baze
   macke <- reactive({
     pridobi.imena.mack()
@@ -108,15 +134,15 @@ shinyServer(function(input, output){
     selectedCat <- input$exchangeCat
     output$mackeCene <- renderUI({
       output$tabelaCenMack <- renderDataTable({
-        pridobi.cene.macke(selectedCat)
+        pridobi.cene.macke(selectedCat, userID())
       })
       dataTableOutput("tabelaCenMack")
     })
     })
   
   # Stanje v denarnici
-  updateWaletStatus <- function(){
-    walletStatusFiatDummy <- renderText(as.character(check.wallet.balance(userID)))
+  updateWaletStatus <- function(ID){
+    walletStatusFiatDummy <- renderText(as.character(check.wallet.balance(ID)))
     output$walletStatusFiat <<- walletStatusFiatDummy
     output$walletStatusFiatModal1 <<- walletStatusFiatDummy
     output$walletStatusFiatModal2 <<- walletStatusFiatDummy
@@ -127,7 +153,7 @@ shinyServer(function(input, output){
   observe({
     statusUpdateTimer()
     
-    updateWaletStatus()
+    updateWaletStatus(userID())
     selectedCat <- input$exchangeCat
     output$mackeCene <- renderUI({
       output$tabelaCenMack <- renderDataTable({
@@ -140,7 +166,7 @@ shinyServer(function(input, output){
   
   # Deposit/Withdrawal funkcije
   observeEvent(input$execute_btnWithdrawalModal,{
-    status <- function()
+    status <- user.change.balance(userID(), input$walletWithdrawalInput, "withdrawal")
     if(status == TRUE){
       showModal(modalDialog(
         title = "Withdrawal successful",
@@ -148,6 +174,7 @@ shinyServer(function(input, output){
         easyClose = TRUE,
         footer = NULL
       ))
+      updateWaletStatus()
     }else if(status == FALSE){
       showModal(modalDialog(
         title = "Withdrawal unsuccessful",
@@ -166,7 +193,7 @@ shinyServer(function(input, output){
   })
   
   observeEvent(input$execute_btnDepositModal,{
-    status <- function()
+    status <- user.change.balance(userID(), input$walletDepositInput, "deposit")
       if(status == TRUE){
         showModal(modalDialog(
           title = "Deposit successful",
@@ -174,6 +201,7 @@ shinyServer(function(input, output){
           easyClose = TRUE,
           footer = NULL
         ))
+        updateWaletStatus()
       }else{
         showModal(modalDialog(
           title = "Deposit unsuccessful",

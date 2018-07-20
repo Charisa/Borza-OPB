@@ -91,8 +91,7 @@ body <- dashboardBody(
                                              "execute_btnWithdrawal", size = "small",
                                               verbatimTextOutput("walletStatusFiatModal1"),
                                               numericInput("walletWithdrawalInput", label = "Amount",
-                                                           min = 0, value = 0,
-                                                           max = check.wallet.balance(userID)), 
+                                                           min = 0, value = 0), 
                                               actionButton("execute_btnWithdrawalModal", "Withdraw")
                                              ),
                                      actionButton("execute_btnDeposit", "Deposit"),
@@ -113,13 +112,24 @@ body <- dashboardBody(
   )
 )
 fluidPage(useShinyjs(),
-  conditionalPanel(condition = "output.signUpBOOL!='1' && output.signUpBOOL!='2' && false", 
+          # dashboardHeader(title = "Borza mack",
+          #                 tags$li(class = "dropdown",
+          #                         tags$li(class = "dropdown", textOutput("dashboardLoggedUser"), style = "padding-top: 15px; padding-bottom: 15px; color: #fff;"),
+          #                         tags$li(class = "dropdown", actionLink("dashboardLogin", textOutput("logintext")))
+          #                 )),
+  conditionalPanel(condition = "output.signUpBOOL!='1' && output.signUpBOOL!='2'",#&& false", 
                    vpisniPanel),       # UI panel za vpis
   conditionalPanel(condition = "output.signUpBOOL=='1'", registracijaPanel),  # UI panel registracija
   # TODO sprememba stanja ob spremembi na bazi oz na vsakih 10 sekund
-  conditionalPanel(condition = "true",#"output.signUpBOOL=='2'",    # Panel, ko si ze vpisan
-                   dashboardPage(dashboardHeader(title = "Borza mack"),
+  conditionalPanel(condition = "output.signUpBOOL=='2'",    # Panel, ko si ze vpisan
+                   dashboardPage(#dashboardHeader(disable=T),
+                     dashboardHeader(title = "Borza mack",
+                                                 tags$li(class = "dropdown",
+                                                         tags$li(class = "dropdown", textOutput("dashboardLoggedUser"), style = "padding-top: 15px; padding-bottom: 15px; color: #fff;"),
+                                                         tags$li(class = "dropdown", actionLink("dashboardLogin", textOutput("logintext")))
+                                                         )),
                                  sidebar,
-                                 body)),
+                                 body,
+                                 skin = "blue")),
   theme="bootstrap.css"
 )
