@@ -46,7 +46,9 @@ sidebar <- dashboardSidebar(hr(),
   sidebarMenu(id="exchangeId",
               menuItem("Exchange", tabName = "exchange", icon=icon("line-chart"), selected = TRUE)),
   sidebarMenu(id="walletId",
-              menuItem("Wallet",tabName = "wallet", icon=icon("usd")))
+              menuItem("Wallet",tabName = "wallet", icon=icon("usd"))),
+  sidebarMenu(id="historyId", 
+              menuItem("Transaction history", tabName = "history", icon=icon("calendar")))
 )
 
 body <- dashboardBody(
@@ -108,7 +110,11 @@ body <- dashboardBody(
                      )
 
               )
-            ))
+            )),
+    # Zgodovina
+    tabItem(tabName = "history",
+                     uiOutput("historyTable")
+            )
   )
 )
 fluidPage(useShinyjs(),

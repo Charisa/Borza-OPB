@@ -80,6 +80,7 @@ createTables <- function(users = c("sarak, kajav, andrazp, javnost")){
     dbSendQuery(conn, build_sql("CREATE TABLE IF NOT EXISTS transaction (
                                 transactionID SERIAL PRIMARY KEY,
                                 userID INTEGER REFERENCES userAccount (userID),
+                                user2ID INTEGER REFERENCES userAccount (userID),
                                 orderType TEXT,
                                 price FLOAT,
                                 quantity INTEGER,

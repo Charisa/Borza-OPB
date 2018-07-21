@@ -212,7 +212,13 @@ shinyServer(function(input, output){
       }
   })
   
-  
+  # Tabela zgodovine
+  output$historyTable <- renderUI({
+    output$tabelaZgodovine <- renderDataTable({
+      pridobi.zgodovino.transakcij(userID())
+    })
+    dataTableOutput("tabelaZgodovine")
+  })
 }
 )
 
