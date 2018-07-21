@@ -205,6 +205,15 @@ shinyServer(function(input, output){
     }
   })
   
+  # Buy order
+  observeEvent(input$execute_btnBuy, {
+    output$exchangeTotalModal <<- renderText(
+      as.character(
+        ifelse(is.na(check.total.price(pridobi.imena.mack()[1], input$exchangeBuyQuantityInput)),
+               0,
+               check.total.price(pridobi.imena.mack()[1], input$exchangeBuyQuantityInput))))
+  })
+  
   # WALLET
   # Deposit/Withdrawal funkcije
   observeEvent(input$execute_btnWithdrawalModal,{

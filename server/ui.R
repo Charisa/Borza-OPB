@@ -65,6 +65,11 @@ body <- dashboardBody(
                                                   min = 0, value = 0, step = 1), 
                                      actionButton("execute_btnBuy", "Buy")
                                      ),
+                            bsModal("exchangeBuyModal", "Buy cats",
+                                    "execute_btnBuy", size = "small",
+                                    verbatimTextOutput("exchangeTotalModal"),
+                                    actionButton("execute_btnBuyConfirm", "Buy")
+                            ),
                             tabPanel("Sell",
                                      numericInput("exchangeSellPriceInput", label="Price",
                                                   min = 0, value = 0),
