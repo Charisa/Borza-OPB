@@ -167,7 +167,44 @@ shinyServer(function(input, output){
     })
   })
   
+  # Dodajanje sell orderja
+  observeEvent(input$execute_btnSell,{
+    status <- post.sell.order(userID(),
+                              input$exchangeCat,
+                              input$exchangeSellPriceInput,
+                              input$exchangeSellQuantityInput)
+    if(status == 1){
+      showModal(modalDialog(
+        title = "Sell order successful",
+        paste0("Sell order was successfully posted"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }else if(status == -1){
+      showModal(modalDialog(
+        title = "Sell order unsuccessful",
+        paste0("Price has to be greater than 0"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }else if(status == -2){
+      showModal(modalDialog(
+        title = "Sell order unsuccessful",
+        paste0("Quantity has to be greater than 0"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }else{
+      showModal(modalDialog(
+        title = "Sell order unsuccessful",
+        paste0("An error occurred. Please try again."),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }
+  })
   
+  # WALLET
   # Deposit/Withdrawal funkcije
   observeEvent(input$execute_btnWithdrawalModal,{
     status <- user.change.balance(userID(), input$walletWithdrawalInput, "withdraw")
@@ -216,6 +253,7 @@ shinyServer(function(input, output){
       }
   })
   
+  # HISTORY
   # Tabela zgodovine
   # TODO update ko kliknemo na zavihek history
   output$historyTable <- renderUI({
@@ -224,6 +262,7 @@ shinyServer(function(input, output){
     })
     dataTableOutput("tabelaZgodovine")
   })
+  
 }
 )
 

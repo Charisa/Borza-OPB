@@ -121,3 +121,37 @@ sign.in.user <- function(username, pass){
   })
 }
 
+post.sell.order <- function(userID, catBreed, price, quantity){
+  # Posts a sell order
+  # if it was successful, it returns 1, otherwise it returns:
+  #   -1 if price was nonpositive
+  #   -2 if quantity was nonpositive
+  #    0 if there was any other error
+  tryCatch({
+    drv <- dbDriver("PostgreSQL")
+    conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
+    success <- 0
+    Q <- quantity
+    P <- price
+    if(P>0 & quantity>0){
+      sqlInput <- build_sql("INSERT INTO orderbook (userid, ordertype, price,quantity , catid, current)
+                              SELECT ",userID,", 'sell' , ",P,", ",Q,", catid ,",Q,"
+                              FROM  cat
+                              WHERE breed = ",catBreed,";")
+      dbGetQuery(conn, sqlInput)
+      success <- 1
+    }else if(P<=0){
+      success = -1
+    }else{
+      success <- -2
+    }
+  },warning = function(w){
+    print(w)
+  },error = function(e){
+    print(e)
+  }, finally = {
+    dbDisconnect(conn)
+    return(success)
+  })
+  
+}
