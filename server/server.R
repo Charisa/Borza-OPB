@@ -102,6 +102,7 @@ shinyServer(function(input, output){
   observeEvent(input$dashboardLogin, {
     if(loggedIn()){
       output$signUpBOOL <- eventReactive(input$signin_btn, 0)
+      userID <- reactiveVal()
     }
     loggedIn(ifelse(loggedIn(), FALSE, TRUE))
   })
@@ -255,14 +256,20 @@ shinyServer(function(input, output){
   
   # HISTORY
   # Tabela zgodovine
-  # TODO update ko kliknemo na zavihek history
   output$historyTable <- renderUI({
     output$tabelaZgodovine <- renderDataTable({
       pridobi.zgodovino.transakcij(userID())
     })
     dataTableOutput("tabelaZgodovine")
   })
-  
+  observeEvent(input$refreshHistory,{
+    output$historyTable <- renderUI({
+      output$tabelaZgodovine <- renderDataTable({
+        pridobi.zgodovino.transakcij(userID())
+      })
+      dataTableOutput("tabelaZgodovine")
+    })
+  })
 }
 )
 

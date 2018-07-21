@@ -113,7 +113,8 @@ body <- dashboardBody(
             )),
     # Zgodovina
     tabItem(tabName = "history",
-                     uiOutput("historyTable")
+                     uiOutput("historyTable"),
+            actionButton("refreshHistory", "Refresh")
             )
   )
 )
