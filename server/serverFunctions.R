@@ -104,6 +104,29 @@ check.wallet.balance <- function(userID){
   })
 }
 
+user.change.balance <- function(userID, quantity, type){
+  tryCatch({
+    drv <- dbDriver("PostgreSQL")
+    conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
+    status <- FALSE
+    if ((type == "withdraw" | type ==  "bought") & check.wallet.balance(userID) < quantity){
+      status <- FALSE
+    } else {
+      sqlInput <- build_sql("INSERT INTO wallet VALUES (", userID, ",", quantity, ",", type, ");")
+      dbGetQuery(conn, sqlInput)
+      status <- TRUE
+    }
+  },warning = function(w){
+    print(w)
+    status <- "napaka"
+  },error = function(e){
+    print(e)
+    status <- "napaka"
+  }, finally = {
+    dbDisconnect(conn)
+    return(status)
+  })
+}
 
 user.change.balance <- function(userID, quantity, type){
   tryCatch({
@@ -116,6 +139,45 @@ user.change.balance <- function(userID, quantity, type){
       sqlInput <- build_sql("INSERT INTO wallet VALUES (", userID, ",", quantity, ",", type, ");")
       dbGetQuery(conn, sqlInput)
       status <- TRUE
+    }
+  },warning = function(w){
+    print(w)
+    status <- "napaka"
+  },error = function(e){
+    print(e)
+    status <- "napaka"
+  }, finally = {
+    dbDisconnect(conn)
+    return(status)
+  })
+}
+
+check.total.price <- function(cat, quantity){
+  tryCatch({
+    drv <- dbDriver("PostgreSQL")
+    conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
+    sqlInput1 <- build_sql("SELECT catid FROM cat WHERE breed =", cat, ";")
+    catID <- dbGetQuery(conn, sqlInput1)[[1]]
+    sqlInput2 <- build_sql("SELECT price, current FROM orderbook WHERE ((catid =", catID, ") AND (current > 0));")
+    tabela_cen <- dbGetQuery(conn, sqlInput2)
+    print(tabela_cen)
+    status <- 0
+    st_mack_na_razpolago <- sum(tabela_cen[2])
+    if (st_mack_na_razpolago < quantity) {
+      status <- FALSE
+    } else {
+      counter <- 0
+      while (counter < quantity) {
+        cena <- min(tabela_cen[1])
+        index <- which(tabela_cen[1] == cena)[1]
+        tabela_cen[index, 2] <- tabela_cen[index, 2] - 1
+        if (tabela_cen[index, 2] == 0) {
+          tabela_cen <- tabela_cen[-index,]
+          tabela_cen <- bind_rows(tabela_cen)
+        }
+        status <- status + cena
+        counter <- counter + 1
+      }
     }
   },warning = function(w){
     print(w)
