@@ -183,7 +183,6 @@ check.total.price <- function(cat, quantity){
     catID <- dbGetQuery(conn, sqlInput1)[[1]]
     sqlInput2 <- build_sql("SELECT price, current FROM orderbook WHERE ((catid =", catID, ") AND (current > 0));")
     tabela_cen <- dbGetQuery(conn, sqlInput2)
-    print(tabela_cen)
     status <- 0
     st_mack_na_razpolago <- sum(tabela_cen[2])
     if (st_mack_na_razpolago < quantity) {
