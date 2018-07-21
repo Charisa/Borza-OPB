@@ -11,6 +11,9 @@ pridobi.cene.macke <- function(cat){
     macke <- dbGetQuery(conn, sqlInput)
   },finally = {
     dbDisconnect(conn)
+    if(ncol(macke)<1){
+      return(data.frame(breed = character(), price = numeric(), number = integer()))
+    }
     return(macke)
   }
   )
