@@ -18,8 +18,10 @@ shinyServer(function(input, output){
   userID <- reactiveVal()    # Placeholder za userID
   loggedIn <- reactiveVal(FALSE)    # Placeholder za logout gumb oz vrednost gumba
   
-  output$signUpBOOL <- eventReactive(input$signup_btn, 1) # Gumb, ce se hoce uporabnik registrirat
+  # Gumb, ce se hoce uporabnik registrirat
+  output$signUpBOOL <- eventReactive(input$signup_btn, 1)
   outputOptions(output, 'signUpBOOL', suspendWhenHidden=FALSE)  # Da omogoca skrivanje/odkrivanje
+  observeEvent(input$signup_btn, output$signUpBOOL <- eventReactive(input$signup_btn, 1))
 
   # Greyout of signin button
   observeEvent(c(input$userName,input$password), {
