@@ -12,6 +12,7 @@ shinyServer(function(input, output){
   library(dbplyr)
   library(DBI)
   library(RPostgreSQL)
+  library(bcrypt)
   drv <- dbDriver("PostgreSQL")
   
   userID <- reactiveVal()    # Placeholder za userID
@@ -142,7 +143,8 @@ shinyServer(function(input, output){
   
   # Stanje v denarnici
   updateWaletStatus <- function(ID){
-    walletStatusFiatDummy <- renderText(as.character(check.wallet.balance(ID)))
+    walletStatusFiatDummy <- renderText(as.character(ifelse(is.na(check.wallet.balance(ID)),0,check.wallet.balance(ID))))
+    
     output$walletStatusFiat <<- walletStatusFiatDummy
     output$walletStatusFiatModal1 <<- walletStatusFiatDummy
     output$walletStatusFiatModal2 <<- walletStatusFiatDummy
@@ -166,7 +168,7 @@ shinyServer(function(input, output){
   
   # Deposit/Withdrawal funkcije
   observeEvent(input$execute_btnWithdrawalModal,{
-    status <- user.change.balance(userID(), input$walletWithdrawalInput, "withdrawal")
+    status <- user.change.balance(userID(), input$walletWithdrawalInput, "withdraw")
     if(status == TRUE){
       showModal(modalDialog(
         title = "Withdrawal successful",
@@ -213,6 +215,7 @@ shinyServer(function(input, output){
   })
   
   # Tabela zgodovine
+  # TODO update ko kliknemo na zavihek history
   output$historyTable <- renderUI({
     output$tabelaZgodovine <- renderDataTable({
       pridobi.zgodovino.transakcij(userID())
