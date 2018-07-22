@@ -243,6 +243,7 @@ pridobi.zgodovino.transakcij <- function(userID){
                          transaction.userid = ",userID)
     
     zgodovina <- dbGetQuery(conn, sqlInput)
+    zgodovina <- zgodovina %>% mutate(action = ifelse(action=="sold", "bought", "sold"))
   },finally = {
     dbDisconnect(conn)
     if(ncol(zgodovina)<1){

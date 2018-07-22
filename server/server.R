@@ -138,7 +138,7 @@ shinyServer(function(input, output){
     selectedCat <- input$exchangeCat
     output$mackeCene <- renderUI({
       output$tabelaCenMack <- renderDataTable({
-        pridobi.cene.macke(selectedCat, userID())
+        pridobi.cene.macke(selectedCat)
       })
       dataTableOutput("tabelaCenMack")
     })
@@ -146,7 +146,7 @@ shinyServer(function(input, output){
   
   # Stanje v denarnici
   updateWaletStatus <- function(ID){
-    walletStatusFiatDummy <- renderText(as.character(ifelse(is.na(check.wallet.balance(ID)),0,check.wallet.balance(ID))))
+    walletStatusFiatDummy <- renderText(format(ifelse(is.na(check.wallet.balance(ID)),0,check.wallet.balance(ID)), scientific = FALSE))
     
     output$walletStatusFiat <<- walletStatusFiatDummy
     output$walletStatusFiatModal1 <<- walletStatusFiatDummy
@@ -206,12 +206,38 @@ shinyServer(function(input, output){
   })
   
   # Buy order
+  observeEvent(c(input$exchangeBuyQuantityInput), {
+    shinyjs::toggleState("execute_btnBuyConfirm", 
+                         input$exchangeBuyQuantityInput>0)
+  })
+  
   observeEvent(input$execute_btnBuy, {
-    output$exchangeTotalModal <<- renderText(
+    output$exchangeTotalModal <- renderText(
       as.character(
-        ifelse(is.na(check.total.price(pridobi.imena.mack()[1], input$exchangeBuyQuantityInput)),
-               0,
-               check.total.price(pridobi.imena.mack()[1], input$exchangeBuyQuantityInput))))
+        ifelse(check.total.price(input$exchangeCat, input$exchangeBuyQuantityInput)!=FALSE,
+               check.total.price(input$exchangeCat, input$exchangeBuyQuantityInput),
+               "Not enough cats on sale")))
+  })
+  
+  observeEvent(input$execute_btnBuyConfirm, {
+    status <- execute.buy.order(userID_buyer = userID(),cat = input$exchangeCat, 
+                                quantity = input$exchangeBuyQuantityInput)
+    if(status==1){
+      showModal(modalDialog(
+        title = "Success",
+        paste0("You have successfully bougt ",input$exchangeBuyQuantityInput," ",input$exchangeCat," cats"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }else{
+      showModal(modalDialog(
+        title = "Error",
+        paste0("There seems to have been an error. Please try again."),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }
+      
   })
   
   # WALLET

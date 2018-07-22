@@ -68,7 +68,7 @@ body <- dashboardBody(
                             bsModal("exchangeBuyModal", "Buy cats",
                                     "execute_btnBuy", size = "small",
                                     verbatimTextOutput("exchangeTotalModal"),
-                                    actionButton("execute_btnBuyConfirm", "Buy")
+                                    actionButton("execute_btnBuyConfirm", "Confirm Buy order")
                             ),
                             tabPanel("Sell",
                                      numericInput("exchangeSellPriceInput", label="Price",
@@ -79,8 +79,6 @@ body <- dashboardBody(
                                      )
                 
               )), column(width=6,
-                         # TODO
-                         #dataTableOutput("catPriceTable")
                          uiOutput("mackeCene")
                          )
             )),
