@@ -110,5 +110,30 @@ createTables <- function(users = c("sarak, kajav, andrazp, javnost")){
 deleteTables(c("userAccount", "cat", "transaction","orderbook", "wallet"))
 createTables()
 
+addCats <- function(breeds = NULL){
+  tryCatch({
+    # Connection setup
+    drv <- dbDriver("PostgreSQL")
+    conn <- dbConnect(drv, 
+                      dbname = db, 
+                      host = host,
+                      user = user,
+                      password = password)
+    if(is.null(breeds)){
+      breeds <- c("Chartreoux", "Persian", "Bengal",
+                  "Rusian Blue", "Maine Coon", "Devon Rex",
+                  " British Shorthair", "Savannah",
+                  "Ragdoll")
+    }
+    catid <- 1:length(breeds)
+    mackeTable <- data.frame(catid = catid,
+                             breed = breeds)
+    dbWriteTable(conn,name="cat", mackeTable, append=TRUE, row.names = FALSE)
+  },finally = {
+    dbDisconnect(conn)
+  }
+  )
+}
+addCats()
 
 source("auth_public.R")
