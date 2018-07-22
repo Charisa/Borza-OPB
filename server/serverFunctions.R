@@ -258,6 +258,7 @@ pridobi.zgodovino.transakcij <- function(userID){
 execute.buy.order <- function(userID_buyer, cat, quantity){
   # kupi po minimalni ceni in spremeni razpolozljivost mack v orderbooku, kjer se current zmanjša za stevilo kupljenih mack
   # lahko se zgodi, da user kupi svojo macko.
+  # za potrebe te aplikacije ne potrebujemo izvajanja vseh ukazov na sql bazi
   izvedi_vmesno_transakcijo <- function(buyer, seller, price, quantity, catID, orderid, st_prodanih) {
     sqlInputBuyer <- build_sql("INSERT INTO transaction (userid, user2id, ordertype, price, quantity, catid)
                           VALUES (", as.integer(buyer), ",", as.integer(seller), ", 'bought',", 
@@ -276,14 +277,14 @@ execute.buy.order <- function(userID_buyer, cat, quantity){
     catID <- dbGetQuery(conn, sqlInput1)[[1]]
     sqlInput2 <- build_sql("SELECT orderid, userid, price, current FROM orderbook WHERE ((catid =", catID, ") AND (current > 0)) ORDER BY time ASC ;")
     tabela_cen <- dbGetQuery(conn, sqlInput2)
+    
     st_mack_na_razpolago <- sum(tabela_cen[4])
     min_cena <- min(tabela_cen[3])
     index_min_cene <- which(tabela_cen[3] == min_cena)[1]
-    print(index_min_cene)
     userid_seller_min_cene <- tabela_cen[index_min_cene, 2]
     orderid_min_cene <- tabela_cen[index_min_cene, 1]
     status <- 1
-    print(tabela_cen[index_min_cene, 4])
+    
     if (st_mack_na_razpolago < quantity) {
       status <- 0
     } else {
@@ -294,7 +295,6 @@ execute.buy.order <- function(userID_buyer, cat, quantity){
           kolicina_prodanih <- kolicina_prodanih + 1
           counter <- counter + 1
           tabela_cen[index_min_cene, 4] <- tabela_cen[index_min_cene, 4] - 1
-          print(tabela_cen[index_min_cene, 4])
         }
         for (i in 1:3){
           dbGetQuery(conn, izvedi_vmesno_transakcijo(userID_buyer, userid_seller_min_cene, min_cena, 
