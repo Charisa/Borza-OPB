@@ -6,13 +6,7 @@ shinyServer(function(input, output){
   source("../auth.R")
   source("serverFunctions.R")
   source("serverFunctionsTemp.R")
-  library(shiny)
-  library(shinyBS)
-  library(dplyr)
-  library(dbplyr)
-  library(DBI)
-  library(RPostgreSQL)
-  library(bcrypt)
+  
   drv <- dbDriver("PostgreSQL")
   
   userID <- reactiveVal()    # Placeholder za userID

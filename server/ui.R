@@ -1,9 +1,14 @@
 library(shiny)
 library(shinydashboard)
 library(shinyjs)
+library(shiny)
+library(shinyBS)
+library(dplyr)
+library(dbplyr)
+library(DBI)
+library(RPostgreSQL)
+library(bcrypt)
 
-
-# TODO Dodaj css/html za oblikovanje
 
 vpisniPanel <- tabPanel("SignIn", value="signIn",
                          fluidPage(
