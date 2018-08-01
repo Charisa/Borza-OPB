@@ -1,7 +1,6 @@
 library(shiny)
 library(shinydashboard)
 library(shinyjs)
-library(shiny)
 library(shinyBS)
 library(dplyr)
 library(dbplyr)

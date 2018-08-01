@@ -40,6 +40,7 @@ sign.in.user <- function(username, pass){
     drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
     userTable <- tbl(conn, "useraccount")
+    obstoj <- 0
     # obstoj = 0, ce username in geslo ne obstajata,  1 ce obstaja
     uporabnik <- username
     geslo <- (userTable %>% filter(username == uporabnik) %>% select(password) %>% collect())[[1]]
@@ -260,14 +261,27 @@ execute.buy.order <- function(userID_buyer, cat, quantity){
   # kupi po minimalni ceni in spremeni razpolozljivost mack v orderbooku, kjer se current zmanjša za stevilo kupljenih mack
   # lahko se zgodi, da user kupi svojo macko.
   izvedi_vmesno_transakcijo <- function(buyer, seller, price, quantity, catID, orderid, st_prodanih) {
-    sqlInputBuyer <- build_sql("INSERT INTO transaction (userid, user2id, ordertype, price, quantity, catid)
+    # sqlInputBuyer <- build_sql("INSERT INTO transaction (userid, user2id, ordertype, price, quantity, catid)
+    #                       VALUES (", as.integer(buyer), ",", as.integer(seller), ", 'bought',", 
+    #                       price, ",", as.integer(st_prodanih), ",", as.integer(catID),");")
+    # sqlInputSeller <- build_sql("INSERT INTO transaction (userid, user2id, ordertype, price, quantity, catid)
+    #                       VALUES (",as.integer(seller), ",", as.integer(buyer), ", 'sold',", 
+    #                             price, ",", as.integer(st_prodanih), ",", as.integer(catID),");")
+    # sqlInputUpdateOrderBook <- build_sql("UPDATE orderbook SET current = current -", st_prodanih, "WHERE orderid =", as.integer(orderid), ";")
+    # sqlInputUpdateWalletBuyer <- build_sql("INSERT INTO wallet (userid, balance, type) VALUES (", buyer, ",", st_prodanih * price, ", 'bought');")
+    # sqlInputUpdateWalletSeller <- build_sql("INSERT INTO wallet (userid, balance, type) VALUES (", seller, ",", st_prodanih * price, ", 'sold');")
+    sqlInput <- build_sql("INSERT INTO transaction (userid, user2id, ordertype, price, quantity, catid)
                           VALUES (", as.integer(buyer), ",", as.integer(seller), ", 'bought',", 
-                          price, ",", as.integer(st_prodanih), ",", as.integer(catID),");")
-    sqlInputSeller <- build_sql("INSERT INTO transaction (userid, user2id, ordertype, price, quantity, catid)
-                          VALUES (",as.integer(seller), ",", as.integer(buyer), ", 'sold',", 
-                                price, ",", as.integer(st_prodanih), ",", as.integer(catID),");")
-    sqlInputUpdateOrderBook <- build_sql("UPDATE orderbook SET current = current -", st_prodanih, "WHERE orderid =", as.integer(orderid), ";")
-    return(c(sqlInputBuyer, sqlInputSeller, sqlInputUpdateOrderBook))
+                               price, ",", as.integer(st_prodanih), ",", as.integer(catID),");
+                          INSERT INTO transaction (userid, user2id, ordertype, price, quantity, catid)
+                                VALUES (",as.integer(seller), ",", as.integer(buyer), ", 'sold',", 
+                                price, ",", as.integer(st_prodanih), ",", as.integer(catID),");
+                          UPDATE orderbook SET current = current -", st_prodanih, "WHERE orderid =", as.integer(orderid), ";
+                          INSERT INTO wallet (userid, balance, type) VALUES (", buyer, ",", st_prodanih * price, ", 'bought');
+                          INSERT INTO wallet (userid, balance, type) VALUES (", seller, ",", st_prodanih * price, ", 'sold');")
+    # return(c(sqlInputBuyer, sqlInputSeller, sqlInputUpdateOrderBook, 
+    #          sqlInputUpdateWalletBuyer, sqlInputUpdateWalletSeller))
+    return(sqlInput)
   }
   
   tryCatch({
@@ -277,7 +291,7 @@ execute.buy.order <- function(userID_buyer, cat, quantity){
     catID <- dbGetQuery(conn, sqlInput1)[[1]]
     sqlInput2 <- build_sql("SELECT orderid, userid, price, current FROM orderbook WHERE ((catid =", catID, ") AND (current > 0)) ORDER BY time ASC ;")
     tabela_cen <- dbGetQuery(conn, sqlInput2)
-    print(tabela_cen)
+    
     st_mack_na_razpolago <- sum(tabela_cen[4])
     min_cena <- min(tabela_cen[3])
     index_min_cene <- which(tabela_cen[3] == min_cena)[1]
@@ -296,10 +310,9 @@ execute.buy.order <- function(userID_buyer, cat, quantity){
           counter <- counter + 1
           tabela_cen[index_min_cene, 4] <- tabela_cen[index_min_cene, 4] - 1
         }
-        for (i in 1:3){
-          dbGetQuery(conn, izvedi_vmesno_transakcijo(userID_buyer, userid_seller_min_cene, min_cena, 
-                                                     quantity, catID, orderid_min_cene, kolicina_prodanih)[i])
-        }
+        dbGetQuery(conn, izvedi_vmesno_transakcijo(userID_buyer, userid_seller_min_cene, min_cena, 
+                                                     quantity, catID, orderid_min_cene, kolicina_prodanih))
+        
         kolicina_prodanih <- 0
         tabela_cen <- tabela_cen[-index_min_cene,]
         min_cena <- min(tabela_cen[3])

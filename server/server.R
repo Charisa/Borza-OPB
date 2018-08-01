@@ -3,9 +3,8 @@
 #dbDisconnect(conn)
 
 shinyServer(function(input, output){
-  source("../auth.R")
+  source("../auth_public.R")
   source("serverFunctions.R")
-  source("serverFunctionsTemp.R")
   
   drv <- dbDriver("PostgreSQL")
   
@@ -214,12 +213,32 @@ shinyServer(function(input, output){
   })
   
   observeEvent(input$execute_btnBuyConfirm, {
-    status <- execute.buy.order(userID_buyer = userID(),cat = input$exchangeCat, 
-                                quantity = input$exchangeBuyQuantityInput)
+    if(is.numeric(check.total.price(input$exchangeCat, input$exchangeBuyQuantityInput))){
+      cena <- check.total.price(input$exchangeCat, input$exchangeBuyQuantityInput)
+      stanje <- check.wallet.balance(userID())
+      stanje <- ifelse(is.na(stanje),0, stanje)
+      
+      if(cena<=stanje){
+        status <- execute.buy.order(userID_buyer = userID(),cat = input$exchangeCat, 
+                                    quantity = input$exchangeBuyQuantityInput)
+      }else{
+        status <- -1
+        }
+    }else{
+      status <- 0
+    }
+      
     if(status==1){
       showModal(modalDialog(
         title = "Success",
-        paste0("You have successfully bougt ",input$exchangeBuyQuantityInput," ",input$exchangeCat," cats"),
+        paste0("You have successfully bought ",input$exchangeBuyQuantityInput," ",input$exchangeCat," cats"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }else if(status==-1){
+      showModal(modalDialog(
+        title = "Failure",
+        paste0("You have insufficient funds"),
         easyClose = TRUE,
         footer = NULL
       ))
