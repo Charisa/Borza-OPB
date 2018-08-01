@@ -70,6 +70,7 @@ createTables <- function(users = c("sarak, kajav, andrazp, javnost")){
                                 type TEXT,
                                 time TIMESTAMP WITH TIME ZONE DEFAULT current_timestamp);"
                                 ))
+    # type: deposit, withdrawal, bought, sold
     
     dbSendQuery(conn, build_sql("CREATE TABLE IF NOT EXISTS cat (
                                 catID INTEGER PRIMARY KEY,
@@ -79,6 +80,7 @@ createTables <- function(users = c("sarak, kajav, andrazp, javnost")){
     dbSendQuery(conn, build_sql("CREATE TABLE IF NOT EXISTS transaction (
                                 transactionID SERIAL PRIMARY KEY,
                                 userID INTEGER REFERENCES userAccount (userID),
+                                user2ID INTEGER REFERENCES userAccount (userID),
                                 orderType TEXT,
                                 price FLOAT,
                                 quantity INTEGER,
@@ -94,7 +96,7 @@ createTables <- function(users = c("sarak, kajav, andrazp, javnost")){
                                 quantity INTEGER,
                                 catID INTEGER REFERENCES cat (catID),
                                 time TIMESTAMP WITH TIME ZONE DEFAULT current_timestamp,
-                                status TEXT)"
+                                current INTEGER)"
                                 ))
     
     lapply(users, grant, conn)
@@ -108,5 +110,30 @@ createTables <- function(users = c("sarak, kajav, andrazp, javnost")){
 deleteTables(c("userAccount", "cat", "transaction","orderbook", "wallet"))
 createTables()
 
+addCats <- function(breeds = NULL){
+  tryCatch({
+    # Connection setup
+    drv <- dbDriver("PostgreSQL")
+    conn <- dbConnect(drv, 
+                      dbname = db, 
+                      host = host,
+                      user = user,
+                      password = password)
+    if(is.null(breeds)){
+      breeds <- c("Chartreoux", "Persian", "Bengal",
+                  "Rusian Blue", "Maine Coon", "Devon Rex",
+                  " British Shorthair", "Savannah",
+                  "Ragdoll")
+    }
+    catid <- 1:length(breeds)
+    mackeTable <- data.frame(catid = catid,
+                             breed = breeds)
+    dbWriteTable(conn,name="cat", mackeTable, append=TRUE, row.names = FALSE)
+  },finally = {
+    dbDisconnect(conn)
+  }
+  )
+}
+addCats()
 
 source("auth_public.R")

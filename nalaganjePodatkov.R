@@ -1,28 +1,10 @@
 library(DBI)
 library(dplyr)
 library(dbplyr)
+library(bcrypt)
 source("auth.R")
 source("server/serverFunctions.R")
 
-addCats <- function(){
-  tryCatch({
-    # Connection setup
-    drv <- dbDriver("PostgreSQL")
-    conn <- dbConnect(drv, 
-                      dbname = db, 
-                      host = host,
-                      user = user,
-                      password = password)
-    
-    mackeTable <- data.frame(catid = c(1,2,3,4,5),
-                             breed = c("Chartreoux", "Persian", "Korat", "Rusian Blue", "Maine Coon"))
-    dbWriteTable(conn,name="cat", mackeTable, append=TRUE, row.names = FALSE)
-  },finally = {
-    dbDisconnect(conn)
-  }
-  )
-}
-addCats()
 addUsers <- function(number = 8){
   lapply(1:number, function(x) sign.up.user(paste0("name",x), paste0("surname",x),
                                             paste0("address",x), paste0("city",x),
@@ -32,3 +14,8 @@ addUsers <- function(number = 8){
          )
 }
 addUsers()
+
+
+df <- data.frame(userid=c(1,1,2,4,5,3), balance=c(100,50,1000,3,1,890), 
+                 type=c("deposit", "withdrawal", "deposit","deposit", "deposit", "deposit"))
+dbWriteTable(conn, name="wallet", df,append=TRUE, row.names=FALSE)

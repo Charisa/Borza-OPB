@@ -1,9 +1,13 @@
 library(shiny)
 library(shinydashboard)
 library(shinyjs)
+library(shinyBS)
+library(dplyr)
+library(dbplyr)
+library(DBI)
+library(RPostgreSQL)
+library(bcrypt)
 
-
-# TODO Dodaj css/html za oblikovanje
 
 vpisniPanel <- tabPanel("SignIn", value="signIn",
                          fluidPage(
@@ -46,7 +50,9 @@ sidebar <- dashboardSidebar(hr(),
   sidebarMenu(id="exchangeId",
               menuItem("Exchange", tabName = "exchange", icon=icon("line-chart"), selected = TRUE)),
   sidebarMenu(id="walletId",
-              menuItem("Wallet",tabName = "wallet", icon=icon("usd")))
+              menuItem("Wallet",tabName = "wallet", icon=icon("usd"))),
+  sidebarMenu(id="historyId", 
+              menuItem("Transaction history", tabName = "history", icon=icon("calendar")))
 )
 
 body <- dashboardBody(
@@ -57,42 +63,87 @@ body <- dashboardBody(
               # Input za buy/sell orderje
               column(width=6,
                      uiOutput("mackeSeznam"),
-                     #selectInput("exchangeCats", label = "Cat", selected = 1, 
-                                 #choices = macke()),
-                      #           choices = c("Chartreoux", "British Shorthair")),
-              
                      tabBox(id = "exchangeAction", title = "Trading box", width=12,
                             tabPanel("Buy",
-                                     numericInput("exchangeBuyPriceInput", label="Price",
-                                                  min = 0, value = 0),   #TODO
                                      numericInput("exchangeBuyQuantityInput", label="Quantity",
-                                                  min = 0, value = 0), 
-                                     actionButton("execute_btnBuy", "Execute Order")
+                                                  min = 0, value = 0, step = 1), 
+                                     actionButton("execute_btnBuy", "Buy")
                                      ),
+                            bsModal("exchangeBuyModal", "Buy cats",
+                                    "execute_btnBuy", size = "small",
+                                    verbatimTextOutput("exchangeTotalModal"),
+                                    actionButton("execute_btnBuyConfirm", "Confirm Buy order")
+                            ),
                             tabPanel("Sell",
                                      numericInput("exchangeSellPriceInput", label="Price",
-                                                  min = 0, value = 0),   #TODO
+                                                  min = 0, value = 0),
                                      numericInput("exchangeSellQuantityInput", label="Quantity",
                                                   min = 0, value = 0),
-                                     actionButton("execute_btnSell", "Execute Order")
+                                     actionButton("execute_btnSell", "Sell")
                                      )
                 
-              ))
+              )), column(width=6,
+                         uiOutput("mackeCene")
+                         )
             )),
     # Denarnica
     tabItem(tabName = "wallet",
             fluidRow(
-              
-            ))
+              # Stanje denarnice in moznost nalaganja novih sredstev
+              column(width = 8,
+                     tabBox(id = "walletStatus", title = "Wallet status", width = 12,
+                            tabPanel("Funds",
+                                     verbatimTextOutput("walletStatusFiat"),
+                                     actionButton("execute_btnWithdrawal", "Withdraw"),
+                                     # Popup za withdrawal
+                                     bsModal("walletWithdrawModal", "Withdrawal of funds",
+                                             "execute_btnWithdrawal", size = "small",
+                                              verbatimTextOutput("walletStatusFiatModal1"),
+                                              numericInput("walletWithdrawalInput", label = "Amount",
+                                                           min = 0, value = 0), 
+                                              actionButton("execute_btnWithdrawalModal", "Withdraw")
+                                             ),
+                                     actionButton("execute_btnDeposit", "Deposit"),
+                                     # Popup za deposit
+                                     bsModal("walletDepositModal", "Deposit of funds",
+                                             "execute_btnDeposit", size = "small",
+                                             verbatimTextOutput("walletStatusFiatModal2"),
+                                             numericInput("walletDepositInput", label = "Amount",
+                                                          min = 0, value = 0), 
+                                             actionButton("execute_btnDepositModal", "Deposit")
+                                     )
+                                     )
+
+                     )
+
+              )
+            )),
+    # Zgodovina
+    tabItem(tabName = "history",
+                     uiOutput("historyTable"),
+            actionButton("refreshHistory", "Refresh")
+            )
   )
 )
 fluidPage(useShinyjs(),
-  conditionalPanel(condition = "output.signUpBOOL!='1' && output.signUpBOOL!='2' && false", 
+          # dashboardHeader(title = "Borza mack",
+          #                 tags$li(class = "dropdown",
+          #                         tags$li(class = "dropdown", textOutput("dashboardLoggedUser"), style = "padding-top: 15px; padding-bottom: 15px; color: #fff;"),
+          #                         tags$li(class = "dropdown", actionLink("dashboardLogin", textOutput("logintext")))
+          #                 )),
+  conditionalPanel(condition = "output.signUpBOOL!='1' && output.signUpBOOL!='2'",#&& false", 
                    vpisniPanel),       # UI panel za vpis
   conditionalPanel(condition = "output.signUpBOOL=='1'", registracijaPanel),  # UI panel registracija
-  conditionalPanel(condition = "true",#"output.signUpBOOL=='2'",    # Panel, ko si ze vpisan
-                   dashboardPage(dashboardHeader(title = "Borza mack"),
+  # TODO sprememba stanja ob spremembi na bazi oz na vsakih 10 sekund
+  conditionalPanel(condition = "output.signUpBOOL=='2'",    # Panel, ko si ze vpisan
+                   dashboardPage(#dashboardHeader(disable=T),
+                     dashboardHeader(title = "Borza mack",
+                                                 tags$li(class = "dropdown",
+                                                         tags$li(class = "dropdown", textOutput("dashboardLoggedUser"), style = "padding-top: 15px; padding-bottom: 15px; color: #fff;"),
+                                                         tags$li(class = "dropdown", actionLink("dashboardLogin", textOutput("logintext")))
+                                                         )),
                                  sidebar,
-                                 body)),
+                                 body,
+                                 skin = "blue")),
   theme="bootstrap.css"
 )

@@ -1,17 +1,20 @@
 #drv <- dbDriver("PostgreSQL")
 #conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
 #dbDisconnect(conn)
+
 shinyServer(function(input, output){
-  source("../auth.R")
+  source("../auth_public.R")
   source("serverFunctions.R")
-  library(dplyr)
-  library(dbplyr)
-  library(DBI)
-  library(RPostgreSQL)
+  
   drv <- dbDriver("PostgreSQL")
   
-  output$signUpBOOL <- eventReactive(input$signup_btn, 1) # Gumb, ce se hoce uporabnik registrirat
+  userID <- reactiveVal()    # Placeholder za userID
+  loggedIn <- reactiveVal(FALSE)    # Placeholder za logout gumb oz vrednost gumba
+  
+  # Gumb, ce se hoce uporabnik registrirat
+  output$signUpBOOL <- eventReactive(input$signup_btn, 1)
   outputOptions(output, 'signUpBOOL', suspendWhenHidden=FALSE)  # Da omogoca skrivanje/odkrivanje
+  observeEvent(input$signup_btn, output$signUpBOOL <- eventReactive(input$signup_btn, 1))
 
   # Greyout of signin button
   observeEvent(c(input$userName,input$password), {
@@ -23,8 +26,9 @@ shinyServer(function(input, output){
   observeEvent(input$signin_btn,
                {signInReturn <- sign.in.user(input$userName, input$password)
                if(signInReturn[[1]]==1){
-                 userID <- signInReturn[[2]]
+                 userID(signInReturn[[2]])
                  output$signUpBOOL <- eventReactive(input$signin_btn, 2)
+                 loggedIn(TRUE)
                }else if(signInReturn[[1]]==0){
                  showModal(modalDialog(
                    title = "Error during sign in",
@@ -87,6 +91,28 @@ shinyServer(function(input, output){
   # Back button to sign in page
   observeEvent(input$signup_btnBack, output$signUpBOOL <- eventReactive(input$signup_btnBack, 0))
   
+  # Login/logout button in header
+  observeEvent(input$dashboardLogin, {
+    if(loggedIn()){
+      output$signUpBOOL <- eventReactive(input$signin_btn, 0)
+      userID <- reactiveVal()
+    }
+    loggedIn(ifelse(loggedIn(), FALSE, TRUE))
+  })
+  
+  output$logintext <- renderText({
+    if(loggedIn()) return("Logout here.")
+    return("Login here")
+  })
+  
+  output$dashboardLoggedUser <- renderText({
+    if(loggedIn()) return(paste("Welcome,", pridobi.ime.uporabnika(userID())))
+    return("")
+  })
+  
+  
+  # GLAVNA STRAN
+  
   # Seznam razpolozljivih mack, pridobljen iz baze
   macke <- reactive({
     pridobi.imena.mack()
@@ -97,6 +123,200 @@ shinyServer(function(input, output){
                 label ="Cat",
                 choices=macke(),
                 selected = 2, multiple = FALSE)
+  })
+  
+  # Tabela cen za izbrano macko
+  selectedCat <- pridobi.imena.mack()[1]
+  observeEvent(input$exchangeCat, {
+    selectedCat <- input$exchangeCat
+    output$mackeCene <- renderUI({
+      output$tabelaCenMack <- renderDataTable({
+        pridobi.cene.macke(selectedCat)
+      })
+      dataTableOutput("tabelaCenMack")
+    })
+    })
+  
+  # Stanje v denarnici
+  updateWaletStatus <- function(ID){
+    walletStatusFiatDummy <- renderText(format(ifelse(is.na(check.wallet.balance(ID)),0,check.wallet.balance(ID)), scientific = FALSE))
+    
+    output$walletStatusFiat <<- walletStatusFiatDummy
+    output$walletStatusFiatModal1 <<- walletStatusFiatDummy
+    output$walletStatusFiatModal2 <<- walletStatusFiatDummy
+  }
+  
+  # Updajta vsebino na vsakih 10 sek
+  statusUpdateTimer <- reactiveTimer(10000)
+  observe({
+    statusUpdateTimer()
+    
+    updateWaletStatus(userID())
+    selectedCat <- input$exchangeCat
+    output$mackeCene <- renderUI({
+      output$tabelaCenMack <- renderDataTable({
+        pridobi.cene.macke(selectedCat)
+      })
+      dataTableOutput("tabelaCenMack")
+    })
+  })
+  
+  # Dodajanje sell orderja
+  observeEvent(input$execute_btnSell,{
+    status <- post.sell.order(userID(),
+                              input$exchangeCat,
+                              input$exchangeSellPriceInput,
+                              input$exchangeSellQuantityInput)
+    if(status == 1){
+      showModal(modalDialog(
+        title = "Sell order successful",
+        paste0("Sell order was successfully posted"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }else if(status == -1){
+      showModal(modalDialog(
+        title = "Sell order unsuccessful",
+        paste0("Price has to be greater than 0"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }else if(status == -2){
+      showModal(modalDialog(
+        title = "Sell order unsuccessful",
+        paste0("Quantity has to be greater than 0"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }else{
+      showModal(modalDialog(
+        title = "Sell order unsuccessful",
+        paste0("An error occurred. Please try again."),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }
+  })
+  
+  # Buy order
+  observeEvent(c(input$exchangeBuyQuantityInput), {
+    shinyjs::toggleState("execute_btnBuyConfirm", 
+                         input$exchangeBuyQuantityInput>0)
+  })
+  
+  observeEvent(input$execute_btnBuy, {
+    output$exchangeTotalModal <- renderText(
+      as.character(
+        ifelse(check.total.price(input$exchangeCat, input$exchangeBuyQuantityInput)!=FALSE,
+               check.total.price(input$exchangeCat, input$exchangeBuyQuantityInput),
+               "Not enough cats on sale")))
+  })
+  
+  observeEvent(input$execute_btnBuyConfirm, {
+    if(is.numeric(check.total.price(input$exchangeCat, input$exchangeBuyQuantityInput))){
+      cena <- check.total.price(input$exchangeCat, input$exchangeBuyQuantityInput)
+      stanje <- check.wallet.balance(userID())
+      stanje <- ifelse(is.na(stanje),0, stanje)
+      
+      if(cena<=stanje){
+        status <- execute.buy.order(userID_buyer = userID(),cat = input$exchangeCat, 
+                                    quantity = input$exchangeBuyQuantityInput)
+      }else{
+        status <- -1
+        }
+    }else{
+      status <- 0
+    }
+      
+    if(status==1){
+      showModal(modalDialog(
+        title = "Success",
+        paste0("You have successfully bought ",input$exchangeBuyQuantityInput," ",input$exchangeCat," cats"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }else if(status==-1){
+      showModal(modalDialog(
+        title = "Failure",
+        paste0("You have insufficient funds"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }else{
+      showModal(modalDialog(
+        title = "Error",
+        paste0("There seems to have been an error. Please try again."),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }
+      
+  })
+  
+  # WALLET
+  # Deposit/Withdrawal funkcije
+  observeEvent(input$execute_btnWithdrawalModal,{
+    status <- user.change.balance(userID(), input$walletWithdrawalInput, "withdraw")
+    if(status == TRUE){
+      showModal(modalDialog(
+        title = "Withdrawal successful",
+        paste0("Withdrawal was successful."),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+      updateWaletStatus()
+    }else if(status == FALSE){
+      showModal(modalDialog(
+        title = "Withdrawal unsuccessful",
+        paste0("Not enough funds"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }else{
+      showModal(modalDialog(
+        title = "Withdrawal unsuccessful",
+        paste0("An error has occurred. Please try again later."),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }
+  })
+  
+  observeEvent(input$execute_btnDepositModal,{
+    status <- user.change.balance(userID(), input$walletDepositInput, "deposit")
+      if(status == TRUE){
+        showModal(modalDialog(
+          title = "Deposit successful",
+          paste0("Deposit was successful."),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+        updateWaletStatus()
+      }else{
+        showModal(modalDialog(
+          title = "Deposit unsuccessful",
+          paste0("An error has occurred. Please try again later."),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      }
+  })
+  
+  # HISTORY
+  # Tabela zgodovine
+  output$historyTable <- renderUI({
+    output$tabelaZgodovine <- renderDataTable({
+      pridobi.zgodovino.transakcij(userID())
+    })
+    dataTableOutput("tabelaZgodovine")
+  })
+  observeEvent(input$refreshHistory,{
+    output$historyTable <- renderUI({
+      output$tabelaZgodovine <- renderDataTable({
+        pridobi.zgodovino.transakcij(userID())
+      })
+      dataTableOutput("tabelaZgodovine")
+    })
   })
 }
 )
