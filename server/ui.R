@@ -27,17 +27,17 @@ registracijaPanel <- tabPanel("SignUp", value = "signUp",
                                 fluidRow(
                                   column(width = 12,
                                          align="center",
-                                         textInput("SignUpName","*Name", value= "", placeholder = "Only Latin characters."),
-                                         textInput("SignUpSurname","*Surname", value= ""),
-                                         textInput("SignUpAddress","*Address", value= ""),
-                                         textInput("SignUpCity","*City", value= ""),
-                                         textInput("SignUpCountry","*Country", value= ""),
-                                         textInput("SignUpEmso","*Social ID", value= ""),
-                                         textInput("SignUpMail","*eMail", value= ""),
-                                         textInput("SignUpUserName","*Username", value= ""),
-                                         passwordInput("SignUpPassword","*Password", value= ""),
-                                         actionButton("signup_btnBack", "*Back"),
-                                         actionButton("signup_btnSignUp", "*Sign Up")
+                                         textInput("SignUpName","* Name", value= "", placeholder = "Only Latin characters."),
+                                         textInput("SignUpSurname","* Surname", value= "", placeholder = "Only Latin characters."),
+                                         textInput("SignUpAddress","* Address", value= "", placeholder = "Only Latin characters."),
+                                         textInput("SignUpCity","* City", value= "", placeholder = "Only Latin characters."),
+                                         textInput("SignUpCountry","* Country", value= "", placeholder = "Only Latin characters."),
+                                         textInput("SignUpEmso","* Social ID", value= "", placeholder = "Only Latin characters."),
+                                         textInput("SignUpMail","* eMail", value= "", placeholder = "Only Latin characters."),
+                                         textInput("SignUpUserName","* Username", value= "", placeholder = "Only Latin characters."),
+                                         passwordInput("SignUpPassword","* Password", value= "", placeholder = "Only Latin characters."),
+                                         actionButton("signup_btnBack", "* Back"),
+                                         actionButton("signup_btnSignUp", "* Sign Up")
                                   )
                                 )
                               )
