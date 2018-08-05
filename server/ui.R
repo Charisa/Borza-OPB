@@ -27,17 +27,17 @@ registracijaPanel <- tabPanel("SignUp", value = "signUp",
                                 fluidRow(
                                   column(width = 12,
                                          align="center",
-                                         textInput("SignUpName","Name", value= ""),
-                                         textInput("SignUpSurname","Surname", value= ""),
-                                         textInput("SignUpAddress","Address", value= ""),
-                                         textInput("SignUpCity","City", value= ""),
-                                         textInput("SignUpCountry","Country", value= ""),
-                                         textInput("SignUpEmso","Social ID", value= ""),
-                                         textInput("SignUpMail","eMail", value= ""),
-                                         textInput("SignUpUserName","Username", value= ""),
-                                         passwordInput("SignUpPassword","Password", value= ""),
-                                         actionButton("signup_btnBack", "Back"),
-                                         actionButton("signup_btnSignUp", "Sign Up")
+                                         textInput("SignUpName","*Name", value= "", placeholder = "Only Latin characters."),
+                                         textInput("SignUpSurname","*Surname", value= ""),
+                                         textInput("SignUpAddress","*Address", value= ""),
+                                         textInput("SignUpCity","*City", value= ""),
+                                         textInput("SignUpCountry","*Country", value= ""),
+                                         textInput("SignUpEmso","*Social ID", value= ""),
+                                         textInput("SignUpMail","*eMail", value= ""),
+                                         textInput("SignUpUserName","*Username", value= ""),
+                                         passwordInput("SignUpPassword","*Password", value= ""),
+                                         actionButton("signup_btnBack", "*Back"),
+                                         actionButton("signup_btnSignUp", "*Sign Up")
                                   )
                                 )
                               )
