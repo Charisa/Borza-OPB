@@ -39,7 +39,7 @@ grantPublic <- function(name = "javnost", conn){
   dbSendQuery(conn, build_sql("GRANT UPDATE ON ALL TABLES IN SCHEMA public TO ", sql(name), ";"))
   dbSendQuery(conn, build_sql("GRANT INSERT ON ALL TABLES IN SCHEMA public TO ", sql(name), ";"))
 }
-createTables <- function(users = c("sarak, kajav, andrazp, javnost")){
+createTables <- function(users = c("sarak, kajav, andrazp")){
   # This function creates the base tables needed the application
   # It requires the following global variables: drv, dbname, host, user, password
   tryCatch({

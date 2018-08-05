@@ -151,7 +151,7 @@ shinyServer(function(input, output){
     selectedCat <- input$exchangeCat
     output$mackeCene <- renderUI({
       output$tabelaCenMack <- DT::renderDataTable(
-        pridobi.cene.macke(selectedCat, options = list(dom = 't')), options = list(searching = FALSE)
+        DT::datatable(pridobi.cene.macke(selectedCat), options = list(searching = FALSE))
       )
       DT::dataTableOutput("tabelaCenMack")
     })
