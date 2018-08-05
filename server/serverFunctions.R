@@ -298,7 +298,7 @@ execute.buy.order <- function(userID_buyer, cat, quantity){
     status <- 2
     
     sqlCheck <- build_sql("SELECT EXISTS(SELECT * FROM cat WHERE breed =", cat, ");")
-    if (dbGetQuery(con, sqlCheck)[1] == TRUE) {
+    if (dbGetQuery(conn, sqlCheck)[1] == TRUE) {
       
       sqlInput1 <- build_sql("SELECT catid FROM cat WHERE breed =", cat, ";")
       catID <- dbGetQuery(conn, sqlInput1)[[1]]
