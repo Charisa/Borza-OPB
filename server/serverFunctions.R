@@ -97,18 +97,22 @@ pridobi.imena.mack <- function(){
  
 check.wallet.balance <- function(userID){
   tryCatch({
+    status <- 0
     drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
     sqlInput <- build_sql("SELECT SUM(CASE WHEN (type = 'deposit' or type = 'sold') THEN 1 ELSE -1 END * balance) AS balance 
                                     FROM wallet WHERE userid = ", userID,";")
     balance1 <- dbGetQuery(conn, sqlInput)[[1]]
+    status <- 1
   },warning = function(w){
     print(w)
   },error = function(e){
     print(e)
   }, finally = {
     dbDisconnect(conn)
-    return(balance1)
+    if (status == 1) {
+      return(balance1)
+    }
   })
 }
 
