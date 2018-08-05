@@ -36,8 +36,8 @@ registracijaPanel <- tabPanel("SignUp", value = "signUp",
                                          textInput("SignUpMail","* eMail", value= "", placeholder = "Only Latin characters."),
                                          textInput("SignUpUserName","* Username", value= "", placeholder = "Only Latin characters."),
                                          passwordInput("SignUpPassword","* Password", value= "", placeholder = "Only Latin characters."),
-                                         actionButton("signup_btnBack", "* Back"),
-                                         actionButton("signup_btnSignUp", "* Sign Up")
+                                         actionButton("signup_btnBack", "Back"),
+                                         actionButton("signup_btnSignUp", "Sign Up")
                                   )
                                 )
                               )
