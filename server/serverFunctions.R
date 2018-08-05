@@ -188,7 +188,7 @@ post.sell.order <- function(userID, catBreed, price, quantity){
     Q <- quantity
     P <- price
     if (as.integer(quantity) != quantity) {
-      status <- -3
+      success <- -3
     } else if (P > 0 & quantity > 0){
       sqlInput <- build_sql("INSERT INTO orderbook (userid, ordertype, price,quantity , catid, current)
                             SELECT ",userID,", 'sell' , ",P,", ",Q,", catid ,",Q,"
