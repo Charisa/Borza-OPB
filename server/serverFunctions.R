@@ -97,18 +97,22 @@ pridobi.imena.mack <- function(){
  
 check.wallet.balance <- function(userID){
   tryCatch({
+    status <- 0
     drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
     sqlInput <- build_sql("SELECT SUM(CASE WHEN (type = 'deposit' or type = 'sold') THEN 1 ELSE -1 END * balance) AS balance 
                                     FROM wallet WHERE userid = ", userID,";")
-    balance <- dbGetQuery(conn, sqlInput)
+    balance1 <- dbGetQuery(conn, sqlInput)[[1]]
+    status <- 1
   },warning = function(w){
     print(w)
   },error = function(e){
     print(e)
   }, finally = {
     dbDisconnect(conn)
-    return(balance[[1]])
+    if (status == 1) {
+      return(balance1)
+    }
   })
 }
 
@@ -180,22 +184,25 @@ post.sell.order <- function(userID, catBreed, price, quantity){
   #   -1 if price was nonpositive
   #   -2 if quantity was nonpositive
   #    0 if there was any other error
+  #   -3 if quantity not integer
   tryCatch({
     drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
     success <- 0
     Q <- quantity
     P <- price
-    if(P>0 & quantity>0){
+    if (as.integer(quantity) != quantity) {
+      success <- -3
+    } else if (P > 0 & quantity > 0){
       sqlInput <- build_sql("INSERT INTO orderbook (userid, ordertype, price,quantity , catid, current)
                             SELECT ",userID,", 'sell' , ",P,", ",Q,", catid ,",Q,"
                             FROM  cat
                             WHERE breed = ",catBreed,";")
       dbGetQuery(conn, sqlInput)
       success <- 1
-    }else if(P<=0){
+    } else if(P <= 0){
       success = -1
-    }else{
+    } else {
       success <- -2
     }
   },warning = function(w){
@@ -244,7 +251,9 @@ pridobi.zgodovino.transakcij <- function(userID){
                          transaction.userid = ",userID)
     
     zgodovina <- dbGetQuery(conn, sqlInput)
-    zgodovina <- zgodovina %>% mutate(action = ifelse(action=="sold", "bought", "sold"))
+    zgodovina <- zgodovina %>% mutate(action = ifelse(action=="sold", 
+                                                      "bought from you", 
+                                                      "sold to you"))
   },finally = {
     dbDisconnect(conn)
     if(ncol(zgodovina)<1){
@@ -260,6 +269,7 @@ pridobi.zgodovino.transakcij <- function(userID){
 execute.buy.order <- function(userID_buyer, cat, quantity){
   # kupi po minimalni ceni in spremeni razpolozljivost mack v orderbooku, kjer se current zmanjša za stevilo kupljenih mack
   # lahko se zgodi, da user kupi svojo macko.
+  
   izvedi_vmesno_transakcijo <- function(buyer, seller, price, quantity, catID, orderid, st_prodanih) {
     # sqlInputBuyer <- build_sql("INSERT INTO transaction (userid, user2id, ordertype, price, quantity, catid)
     #                       VALUES (", as.integer(buyer), ",", as.integer(seller), ", 'bought',", 
@@ -287,40 +297,47 @@ execute.buy.order <- function(userID_buyer, cat, quantity){
   tryCatch({
     drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
-    sqlInput1 <- build_sql("SELECT catid FROM cat WHERE breed =", cat, ";")
-    catID <- dbGetQuery(conn, sqlInput1)[[1]]
-    sqlInput2 <- build_sql("SELECT orderid, userid, price, current FROM orderbook WHERE ((catid =", catID, ") AND (current > 0)) ORDER BY time ASC ;")
-    tabela_cen <- dbGetQuery(conn, sqlInput2)
+    status <- 2
     
-    st_mack_na_razpolago <- sum(tabela_cen[4])
-    min_cena <- min(tabela_cen[3])
-    index_min_cene <- which(tabela_cen[3] == min_cena)[1]
-    userid_seller_min_cene <- tabela_cen[index_min_cene, 2]
-    orderid_min_cene <- tabela_cen[index_min_cene, 1]
-    status <- 1
-    
-    if (st_mack_na_razpolago < quantity) {
-      status <- 0
-    } else {
-      counter <- 0 
-      kolicina_prodanih <- 0
-      while (counter < quantity){
-        while ((tabela_cen[index_min_cene, 4] > 0) & (counter < quantity)) {
-          kolicina_prodanih <- kolicina_prodanih + 1
-          counter <- counter + 1
-          tabela_cen[index_min_cene, 4] <- tabela_cen[index_min_cene, 4] - 1
-        }
-        dbGetQuery(conn, izvedi_vmesno_transakcijo(userID_buyer, userid_seller_min_cene, min_cena, 
-                                                     quantity, catID, orderid_min_cene, kolicina_prodanih))
-        
+    sqlCheck <- build_sql("SELECT EXISTS(SELECT * FROM cat WHERE breed =", cat, ");")
+    if (dbGetQuery(conn, sqlCheck)[1] == TRUE) {
+      
+      sqlInput1 <- build_sql("SELECT catid FROM cat WHERE breed =", cat, ";")
+      catID <- dbGetQuery(conn, sqlInput1)[[1]]
+      sqlInput2 <- build_sql("SELECT orderid, userid, price, current FROM orderbook WHERE ((catid =", catID, ") AND (current > 0)) ORDER BY time ASC ;")
+      tabela_cen <- dbGetQuery(conn, sqlInput2)
+      
+      st_mack_na_razpolago <- sum(tabela_cen[4])
+      min_cena <- min(tabela_cen[3])
+      index_min_cene <- which(tabela_cen[3] == min_cena)[1]
+      userid_seller_min_cene <- tabela_cen[index_min_cene, 2]
+      orderid_min_cene <- tabela_cen[index_min_cene, 1]
+      status <- 1
+      
+      if (st_mack_na_razpolago < quantity) {
+        status <- 0
+      } else {
+        counter <- 0 
         kolicina_prodanih <- 0
-        tabela_cen <- tabela_cen[-index_min_cene,]
-        min_cena <- min(tabela_cen[3])
-        index_min_cene <- which(tabela_cen[3] == min_cena)[1]
-        userid_seller_min_cene <- tabela_cen[index_min_cene, 2]
-        orderid_min_cene <- tabela_cen[index_min_cene, 1]
+        while (counter < quantity){
+          while ((tabela_cen[index_min_cene, 4] > 0) & (counter < quantity)) {
+            kolicina_prodanih <- kolicina_prodanih + 1
+            counter <- counter + 1
+            tabela_cen[index_min_cene, 4] <- tabela_cen[index_min_cene, 4] - 1
+          }
+          dbGetQuery(conn, izvedi_vmesno_transakcijo(userID_buyer, userid_seller_min_cene, min_cena, 
+                                                     quantity, catID, orderid_min_cene, kolicina_prodanih))
+          
+          kolicina_prodanih <- 0
+          tabela_cen <- tabela_cen[-index_min_cene,]
+          min_cena <- min(tabela_cen[3])
+          index_min_cene <- which(tabela_cen[3] == min_cena)[1]
+          userid_seller_min_cene <- tabela_cen[index_min_cene, 2]
+          orderid_min_cene <- tabela_cen[index_min_cene, 1]
+        }
       }
     }
+  
   },warning = function(w){
     print(w)
   },error = function(e){

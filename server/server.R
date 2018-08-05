@@ -53,15 +53,28 @@ shinyServer(function(input, output){
                    shinyjs::toggleState("signup_btnSignUp",
                                         all(c(input$SignUpName, input$SignUpSurname, input$SignUpAddress, input$SignUpCity,
                                               input$SignUpCountry, input$SignUpEmso, input$SignUpMail, 
-                                              input$SignUpUserName, input$SignUpPassword)!=""))
+                                              input$SignUpUserName, input$SignUpPassword)!="")# & 
+                                          # Preveri, ce samo latin characterji
+                                        # !any(grepl("[^\x20-\x7F]",
+                                        #         c(input$SignUpName, input$SignUpSurname, input$SignUpAddress, input$SignUpCity,
+                                        #           input$SignUpCountry, input$SignUpEmso, input$SignUpMail, 
+                                        #           input$SignUpUserName, input$SignUpPassword)))
+                                        )
                  })
   
   # Sign up protocol
   observeEvent(input$signup_btnSignUp,
                {
-                 success <- sign.up.user(input$SignUpName, input$SignUpSurname, input$SignUpAddress, 
-                             input$SignUpCity, input$SignUpCountry, input$SignUpEmso,
-                             input$SignUpMail, input$SignUpUserName, input$SignUpPassword)
+                 if(any(grepl("[^\x20-\x7F]",
+                                      c(input$SignUpName, input$SignUpSurname, input$SignUpAddress, input$SignUpCity,
+                                        input$SignUpCountry, input$SignUpEmso, input$SignUpMail,
+                                        input$SignUpUserName, input$SignUpPassword)))){
+                   success <- -1
+                 }else{
+                   success <- sign.up.user(input$SignUpName, input$SignUpSurname, input$SignUpAddress, 
+                               input$SignUpCity, input$SignUpCountry, input$SignUpEmso,
+                               input$SignUpMail, input$SignUpUserName, input$SignUpPassword)
+                 }
                 if(success==1){
                   showModal(modalDialog(
                     title = "You have successfully signed up!",
@@ -75,6 +88,13 @@ shinyServer(function(input, output){
                     title = "Username conflict!",
                     paste0("The username ",input$SignUpUserName,' is already taken. Please,
                            chose a new one.'),
+                    easyClose = TRUE,
+                    footer = NULL
+                  ))
+                }else if(success==-1){
+                  showModal(modalDialog(
+                    title = "Signup unsuccessful",
+                    paste0("Only Latin characters allowed"),
                     easyClose = TRUE,
                     footer = NULL
                   ))
@@ -130,10 +150,10 @@ shinyServer(function(input, output){
   observeEvent(input$exchangeCat, {
     selectedCat <- input$exchangeCat
     output$mackeCene <- renderUI({
-      output$tabelaCenMack <- renderDataTable({
-        pridobi.cene.macke(selectedCat)
-      })
-      dataTableOutput("tabelaCenMack")
+      output$tabelaCenMack <- DT::renderDataTable(
+        DT::datatable(pridobi.cene.macke(selectedCat), options = list(searching = FALSE))
+      )
+      DT::dataTableOutput("tabelaCenMack")
     })
     })
   
@@ -188,6 +208,13 @@ shinyServer(function(input, output){
         easyClose = TRUE,
         footer = NULL
       ))
+    }else if(status == -3){
+      showModal(modalDialog(
+        title = "Sell order unsuccessful",
+        paste0("Quantity has to be an integer"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
     }else{
       showModal(modalDialog(
         title = "Sell order unsuccessful",
@@ -201,14 +228,18 @@ shinyServer(function(input, output){
   # Buy order
   observeEvent(c(input$exchangeBuyQuantityInput), {
     shinyjs::toggleState("execute_btnBuyConfirm", 
-                         input$exchangeBuyQuantityInput>0)
+                         input$exchangeBuyQuantityInput>0 & 
+                           as.integer(input$exchangeBuyQuantityInput)==input$exchangeBuyQuantityInput)
   })
   
   observeEvent(input$execute_btnBuy, {
     output$exchangeTotalModal <- renderText(
       as.character(
         ifelse(check.total.price(input$exchangeCat, input$exchangeBuyQuantityInput)!=FALSE,
+               # Preverimo se, ce quantity je integer
+               ifelse(as.integer(input$exchangeBuyQuantityInput)==input$exchangeBuyQuantityInput,
                check.total.price(input$exchangeCat, input$exchangeBuyQuantityInput),
+               "Quantity has to be an integer"),
                "Not enough cats on sale")))
   })
   
@@ -242,6 +273,13 @@ shinyServer(function(input, output){
         easyClose = TRUE,
         footer = NULL
       ))
+    }else if(status==2){
+      showModal(modalDialog(
+        title = "Failure",
+        paste0("There are not enough cats on sale"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
     }else{
       showModal(modalDialog(
         title = "Error",
@@ -264,7 +302,7 @@ shinyServer(function(input, output){
         easyClose = TRUE,
         footer = NULL
       ))
-      updateWaletStatus()
+      updateWaletStatus(userID())
     }else if(status == FALSE){
       showModal(modalDialog(
         title = "Withdrawal unsuccessful",
@@ -291,7 +329,7 @@ shinyServer(function(input, output){
           easyClose = TRUE,
           footer = NULL
         ))
-        updateWaletStatus()
+        updateWaletStatus(userID())
       }else{
         showModal(modalDialog(
           title = "Deposit unsuccessful",
