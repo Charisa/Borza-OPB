@@ -7,6 +7,7 @@ library(dbplyr)
 library(DBI)
 library(RPostgreSQL)
 library(bcrypt)
+library(DT)
 
 
 vpisniPanel <- tabPanel("SignIn", value="signIn",
