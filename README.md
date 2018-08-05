@@ -13,3 +13,4 @@ Projekt pri predmetu OPB
 * shinyjs
 * shinyBS
 * bcrypt
+* DT
