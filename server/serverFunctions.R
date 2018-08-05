@@ -101,14 +101,14 @@ check.wallet.balance <- function(userID){
     conn <- dbConnect(drv, dbname = db, host = host, user = user, password = password)
     sqlInput <- build_sql("SELECT SUM(CASE WHEN (type = 'deposit' or type = 'sold') THEN 1 ELSE -1 END * balance) AS balance 
                                     FROM wallet WHERE userid = ", userID,";")
-    balance <- dbGetQuery(conn, sqlInput)
+    balance1 <- dbGetQuery(conn, sqlInput)
   },warning = function(w){
     print(w)
   },error = function(e){
     print(e)
   }, finally = {
     dbDisconnect(conn)
-    return(balance[[1]])
+    return(balance1[[1]])
   })
 }
 
