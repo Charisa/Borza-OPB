@@ -36,6 +36,8 @@ grantPublic <- function(name = "javnost", conn){
   # Grants basics rights to public, so that the database can be viewed
   dbSendQuery(conn, build_sql("GRANT CONNECT ON DATABASE sem2018_andrazp TO ", sql(name), ";"))
   dbSendQuery(conn, build_sql("GRANT SELECT ON ALL TABLES IN SCHEMA public TO ", sql(name), ";"))
+  dbSendQuery(conn, build_sql("GRANT UPDATE ON ALL TABLES IN SCHEMA public TO ", sql(name), ";"))
+  dbSendQuery(conn, build_sql("GRANT INSERT ON ALL TABLES IN SCHEMA public TO ", sql(name), ";"))
 }
 createTables <- function(users = c("sarak, kajav, andrazp, javnost")){
   # This function creates the base tables needed the application
