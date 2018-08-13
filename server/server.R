@@ -148,13 +148,14 @@ shinyServer(function(input, output){
   # Tabela cen za izbrano macko
   selectedCat <- pridobi.imena.mack()[1]
   observeEvent(input$exchangeCat, {
-    selectedCat <- input$exchangeCat
-    output$mackeCene <- renderUI({
-      output$tabelaCenMack <- DT::renderDataTable(
-        DT::datatable(pridobi.cene.macke(selectedCat), options = list(searching = FALSE))
-      )
-      DT::dataTableOutput("tabelaCenMack")
-    })
+    # selectedCat <- input$exchangeCat
+    # output$mackeCene <- renderUI({
+    #   output$tabelaCenMack <- DT::renderDataTable(
+    #     DT::datatable(pridobi.cene.macke(selectedCat), options = list(searching = FALSE))
+    #   )
+    #   DT::dataTableOutput("tabelaCenMack")
+    # })
+    updateCatTable()
     })
   
   # Stanje v denarnici
@@ -166,19 +167,31 @@ shinyServer(function(input, output){
     output$walletStatusFiatModal2 <<- walletStatusFiatDummy
   }
   
+  # Updajte tabele
+  updateCatTable <- function(){
+    selectedCat <- input$exchangeCat
+    output$mackeCene <- renderUI({
+      output$tabelaCenMack <- DT::renderDataTable(
+        DT::datatable(pridobi.cene.macke(selectedCat), options = list(searching = FALSE))
+      )
+      DT::dataTableOutput("tabelaCenMack")
+    })
+  }
+  
   # Updajta vsebino na vsakih 10 sek
   statusUpdateTimer <- reactiveTimer(10000)
   observe({
     statusUpdateTimer()
     
     updateWaletStatus(userID())
-    selectedCat <- input$exchangeCat
-    output$mackeCene <- renderUI({
-      output$tabelaCenMack <- renderDataTable({
-        pridobi.cene.macke(selectedCat)
-      })
-      dataTableOutput("tabelaCenMack")
-    })
+  })
+  
+  # Updajta vsebino na vsakih 60 sek
+  statusUpdateTimer <- reactiveTimer(60000)
+  observe({
+    statusUpdateTimer()
+    
+    updateCatTable()
   })
   
   # Dodajanje sell orderja
@@ -201,6 +214,7 @@ shinyServer(function(input, output){
         easyClose = TRUE,
         footer = NULL
       ))
+      updateCatTable()
     }else if(status == -2){
       showModal(modalDialog(
         title = "Sell order unsuccessful",
@@ -266,6 +280,7 @@ shinyServer(function(input, output){
         easyClose = TRUE,
         footer = NULL
       ))
+      updateCatTable()
     }else if(status==-1){
       showModal(modalDialog(
         title = "Failure",
