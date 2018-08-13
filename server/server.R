@@ -294,7 +294,16 @@ shinyServer(function(input, output){
   # WALLET
   # Deposit/Withdrawal funkcije
   observeEvent(input$execute_btnWithdrawalModal,{
-    status <- user.change.balance(userID(), input$walletWithdrawalInput, "withdraw")
+    withdrawalQuantity <- input$walletWithdrawalInput
+    if((is.numeric(withdrawalQuantity) | is.integer(withdrawalQuantity)) && withdrawalQuantity>0){
+      if(withdrawalQuantity <= 10000000000000)
+        status <- user.change.balance(userID(), withdrawalQuantity, "withdraw")
+      else{
+        status <- "overflow"
+      }
+    }else{
+      status <- "error"
+    }
     if(status == TRUE){
       showModal(modalDialog(
         title = "Withdrawal successful",
@@ -310,6 +319,13 @@ shinyServer(function(input, output){
         easyClose = TRUE,
         footer = NULL
       ))
+    }else if(status == "overflow"){
+      showModal(modalDialog(
+        title = "Withdrawal unsuccessful",
+        paste0("Withdrawal is limited to $10000000000000"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
     }else{
       showModal(modalDialog(
         title = "Withdrawal unsuccessful",
@@ -321,8 +337,17 @@ shinyServer(function(input, output){
   })
   
   observeEvent(input$execute_btnDepositModal,{
-    status <- user.change.balance(userID(), input$walletDepositInput, "deposit")
-      if(status == TRUE){
+    depositQuantity <- input$walletWithdrawalInput
+    if((is.numeric(depositQuantity) | is.integer(depositQuantity)) && depositQuantity>0){
+      if(depositQuantity <= 10000000000000)
+        status <- user.change.balance(userID(), depositQuantity, "deposit")
+      else{
+        status <- "overflow"
+      }
+    }else{
+      status <- "error"
+    }
+    if(status == TRUE){
         showModal(modalDialog(
           title = "Deposit successful",
           paste0("Deposit was successful."),
@@ -330,6 +355,13 @@ shinyServer(function(input, output){
           footer = NULL
         ))
         updateWaletStatus(userID())
+      }else if(status == "overflow"){
+        showModal(modalDialog(
+          title = "Deposit unsuccessful",
+          paste0("Deposit is limited to $10000000000000"),
+          easyClose = TRUE,
+          footer = NULL
+        ))
       }else{
         showModal(modalDialog(
           title = "Deposit unsuccessful",
