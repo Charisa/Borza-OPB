@@ -148,13 +148,14 @@ shinyServer(function(input, output){
   # Tabela cen za izbrano macko
   selectedCat <- pridobi.imena.mack()[1]
   observeEvent(input$exchangeCat, {
-    selectedCat <- input$exchangeCat
-    output$mackeCene <- renderUI({
-      output$tabelaCenMack <- DT::renderDataTable(
-        DT::datatable(pridobi.cene.macke(selectedCat), options = list(searching = FALSE))
-      )
-      DT::dataTableOutput("tabelaCenMack")
-    })
+    # selectedCat <- input$exchangeCat
+    # output$mackeCene <- renderUI({
+    #   output$tabelaCenMack <- DT::renderDataTable(
+    #     DT::datatable(pridobi.cene.macke(selectedCat), options = list(searching = FALSE))
+    #   )
+    #   DT::dataTableOutput("tabelaCenMack")
+    # })
+    updateCatTable()
     })
   
   # Stanje v denarnici
@@ -166,19 +167,31 @@ shinyServer(function(input, output){
     output$walletStatusFiatModal2 <<- walletStatusFiatDummy
   }
   
+  # Updajte tabele
+  updateCatTable <- function(){
+    selectedCat <- input$exchangeCat
+    output$mackeCene <- renderUI({
+      output$tabelaCenMack <- DT::renderDataTable(
+        DT::datatable(pridobi.cene.macke(selectedCat), options = list(searching = FALSE))
+      )
+      DT::dataTableOutput("tabelaCenMack")
+    })
+  }
+  
   # Updajta vsebino na vsakih 10 sek
   statusUpdateTimer <- reactiveTimer(10000)
   observe({
     statusUpdateTimer()
     
     updateWaletStatus(userID())
-    selectedCat <- input$exchangeCat
-    output$mackeCene <- renderUI({
-      output$tabelaCenMack <- renderDataTable({
-        pridobi.cene.macke(selectedCat)
-      })
-      dataTableOutput("tabelaCenMack")
-    })
+  })
+  
+  # Updajta vsebino na vsakih 60 sek
+  statusUpdateTimer <- reactiveTimer(60000)
+  observe({
+    statusUpdateTimer()
+    
+    updateCatTable()
   })
   
   # Dodajanje sell orderja
@@ -201,6 +214,7 @@ shinyServer(function(input, output){
         easyClose = TRUE,
         footer = NULL
       ))
+      updateCatTable()
     }else if(status == -2){
       showModal(modalDialog(
         title = "Sell order unsuccessful",
@@ -266,6 +280,7 @@ shinyServer(function(input, output){
         easyClose = TRUE,
         footer = NULL
       ))
+      updateCatTable()
     }else if(status==-1){
       showModal(modalDialog(
         title = "Failure",
@@ -294,7 +309,16 @@ shinyServer(function(input, output){
   # WALLET
   # Deposit/Withdrawal funkcije
   observeEvent(input$execute_btnWithdrawalModal,{
-    status <- user.change.balance(userID(), input$walletWithdrawalInput, "withdraw")
+    withdrawalQuantity <- input$walletWithdrawalInput
+    if((is.numeric(withdrawalQuantity) | is.integer(withdrawalQuantity)) && withdrawalQuantity>0){
+      if(withdrawalQuantity <= 10000000000000)
+        status <- user.change.balance(userID(), withdrawalQuantity, "withdraw")
+      else{
+        status <- "overflow"
+      }
+    }else{
+      status <- "error"
+    }
     if(status == TRUE){
       showModal(modalDialog(
         title = "Withdrawal successful",
@@ -310,6 +334,13 @@ shinyServer(function(input, output){
         easyClose = TRUE,
         footer = NULL
       ))
+    }else if(status == "overflow"){
+      showModal(modalDialog(
+        title = "Withdrawal unsuccessful",
+        paste0("Withdrawal is limited to $10000000000000"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
     }else{
       showModal(modalDialog(
         title = "Withdrawal unsuccessful",
@@ -321,8 +352,17 @@ shinyServer(function(input, output){
   })
   
   observeEvent(input$execute_btnDepositModal,{
-    status <- user.change.balance(userID(), input$walletDepositInput, "deposit")
-      if(status == TRUE){
+    depositQuantity <- input$walletWithdrawalInput
+    if((is.numeric(depositQuantity) | is.integer(depositQuantity)) && depositQuantity>0){
+      if(depositQuantity <= 10000000000000)
+        status <- user.change.balance(userID(), depositQuantity, "deposit")
+      else{
+        status <- "overflow"
+      }
+    }else{
+      status <- "error"
+    }
+    if(status == TRUE){
         showModal(modalDialog(
           title = "Deposit successful",
           paste0("Deposit was successful."),
@@ -330,6 +370,13 @@ shinyServer(function(input, output){
           footer = NULL
         ))
         updateWaletStatus(userID())
+      }else if(status == "overflow"){
+        showModal(modalDialog(
+          title = "Deposit unsuccessful",
+          paste0("Deposit is limited to $10000000000000"),
+          easyClose = TRUE,
+          footer = NULL
+        ))
       }else{
         showModal(modalDialog(
           title = "Deposit unsuccessful",
